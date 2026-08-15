@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from data_ingestion.db import engine
-from data_ingestion.models import (
+from quick_chat.core.models.models import (
     AddressDetail,
     AgencyBase,
     CaseAppearance,
@@ -106,8 +106,12 @@ def build_rows(case: dict) -> dict[str, list[dict]]:
     # "charges" is a light list; "dispositions.charge_dispositions" carries the
     # full charge fields plus the nested imposed_disposition, keyed by charge id.
     charges_by_id = {charge["id"]: dict(charge) for charge in case.get("charges") or []}
-    for charge_disposition in case.get("dispositions", {}).get("charge_dispositions") or []:
-        charges_by_id.setdefault(charge_disposition["id"], {}).update(charge_disposition)
+    for charge_disposition in (
+        case.get("dispositions", {}).get("charge_dispositions") or []
+    ):
+        charges_by_id.setdefault(charge_disposition["id"], {}).update(
+            charge_disposition
+        )
 
         imposed = charge_disposition.get("imposed_disposition")
         if imposed:
