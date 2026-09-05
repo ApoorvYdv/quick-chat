@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /usr/local/bin/uv
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy
@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy application source
 COPY src ./src
 
-# Install the project
+# Install project
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-editable
 
@@ -46,10 +46,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Use the uv-created virtual environment
-ENV PATH="${PROJECT_HOME}/.venv/bin:${PATH}" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+# Copy uv
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
 
 # Copy virtual environment
 COPY --from=builder ${PROJECT_HOME}/.venv ./.venv
@@ -59,4 +57,4 @@ COPY --from=builder ${PROJECT_HOME}/src ./src
 
 EXPOSE 8000
 
-CMD [ "uvicorn", "quick_chat.main:app", "--host", "0.0.0.0", "--port", "8000" ]
+CMD ["uv", "run", "--", "uvicorn", "quick_chat.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

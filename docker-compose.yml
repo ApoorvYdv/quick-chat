@@ -22,7 +22,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./dockerfile
     ports:
       - "8000:8000"
     environment:
