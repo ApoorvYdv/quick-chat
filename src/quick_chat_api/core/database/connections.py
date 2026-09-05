@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from quick_chat.database.config import DatabaseConfig
-from quick_chat.settings.config import settings
+from quick_chat_api.database.config import DatabaseConfig
+from quick_chat_api.settings.config import settings
 
 
 class AsyncDatabaseSession:

@@ -3,13 +3,13 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import MetaData, engine_from_config, pool
 
-from quick_chat.core.models.config.config import ConfigBase
-from quick_chat.migrations.utils import add_optimistic_lock_directives, ensure_schema
-from quick_chat.settings.config import settings
+from quick_chat_api.core.database.config import DatabaseConfig
+from quick_chat_api.core.models.config.config import ConfigBase
+from quick_chat_api.migrations.utils import add_optimistic_lock_directives, ensure_schema
 
 # Alembic config
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", DatabaseConfig().build_url_as_string())
 
 # Logging
 if config.config_file_name is not None:

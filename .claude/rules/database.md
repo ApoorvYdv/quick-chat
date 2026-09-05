@@ -15,7 +15,7 @@ Do not create ad-hoc database engines or connection pools.
 Do not modify files under:
 
 ```text
-src/quick_chat/core/models/
+src/quick_chat_api/core/models/
 ```
 
 unless the user explicitly asks for a model change.
@@ -59,9 +59,7 @@ If inactive records are intentionally required, use the project's existing `incl
 Prefer SQLAlchemy 2.x style queries:
 
 ```python
-stmt = select(CaseRecord).where(
-    CaseRecord.id == case_id
-)
+stmt = select(CaseRecord).where(CaseRecord.id == case_id)
 
 result = await session.execute(stmt)
 case = result.scalar_one_or_none()

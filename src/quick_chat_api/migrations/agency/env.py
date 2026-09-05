@@ -4,18 +4,18 @@ import sqlalchemy as sa
 from alembic import context
 from sqlalchemy import engine_from_config, pool, text
 
-from quick_chat.core.models.agency.agency import AgencyBase
-from quick_chat.migrations.utils import (
+from quick_chat_api.core.database.config import DatabaseConfig
+from quick_chat_api.core.models.agency.agency import AgencyBase
+from quick_chat_api.migrations.utils import (
     add_optimistic_lock_directives,
     ensure_schema,
     ensure_version_table,
     get_agency_schemas,
 )
-from quick_chat.settings.config import settings
 
 # Alembic config
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", DatabaseConfig().build_url_as_string())
 
 # Logging
 if config.config_file_name is not None:

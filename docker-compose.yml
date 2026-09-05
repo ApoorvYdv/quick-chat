@@ -1,7 +1,9 @@
 services:
   # This service runs the postgres DB used by fastapi app server
+  # Uses Timescale's image (bundles timescaledb, pgvector, pgvectorscale)
+  # so local dev matches the extensions available on Tiger Cloud.
   postgres_db:
-    image: postgres:18-alpine
+    image: timescale/timescaledb-ha:pg18-oss
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
@@ -9,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg_data:/var/lib/postgresql/18/docker
+      - pg_data:/home/postgres/pgdata/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U root -d quick_chat" ]
       interval: 10s
@@ -37,12 +39,12 @@ services:
       AWS_ACCESS_KEY_ID: username
       AWS_SECRET_ACCESS_KEY: password
       AWS_DEFAULT_REGION: ap-south-1
-    # command: [ "uv", "run", "--", "gunicorn", "quick_chat.main:app", "--workers=4", "--worker-class=quick_chat.workers.RestartableUvicornWorker", "--bind=0.0.0.0:8000", "--access-logfile=-", "--reload", "--log-level=debug" ]
+    # command: [ "uv", "run", "--", "gunicorn", "quick_chat_api.main:app", "--workers=4", "--worker-class=quick_chat_api.workers.RestartableUvicornWorker", "--bind=0.0.0.0:8000", "--access-logfile=-", "--reload", "--log-level=debug" ]
     depends_on:
       - postgres_db
     volumes:
-      - ./src/quick_chat:/quick_chat/src/quick_chat
-      - ./tests:/quick_chat/tests
+      - ./src/quick_chat_api:/quick_chat_api/src/quick_chat_api
+      - ./tests:/quick_chat_api/tests
     networks:
       - court-cms-net
 

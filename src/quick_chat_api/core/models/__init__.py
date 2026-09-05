@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from decimal import Decimal
 
-from pydantic import UUID7
 from sqlalchemy import (
     UUID,
     Boolean,
@@ -11,15 +10,13 @@ from sqlalchemy import (
     Integer,
     MetaData,
     String,
-    text,
 )
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from uuid_utils.compat import uuid7
 
-from quick_chat.utils.common.logger import logger
-from quick_chat.utils.helper import (
+from quick_chat_api.utils.common.logger import logger
+from quick_chat_api.utils.helper import (
     format_date,
     format_localized_datetime,
     format_time,
@@ -32,7 +29,7 @@ def current_user():
 
 
 class Base(DeclarativeBase):
-    metadata = MetaData(schema="southern_ute")
+    metadata = MetaData(schema=None)
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_on: Mapped[datetime] = mapped_column(
@@ -49,13 +46,6 @@ class Base(DeclarativeBase):
     )
     modification_version: Mapped[int] = mapped_column(
         Integer, default=1, nullable=False, server_default="1"
-    )
-    unique_reference_id: Mapped[UUID7] = mapped_column(
-        UUID,
-        nullable=False,
-        unique=True,
-        default=uuid7,
-        server_default=text("uuidv7()"),
     )
 
     def to_dict(self, seen: set | None = None):

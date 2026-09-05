@@ -77,7 +77,7 @@ migrate <command> [options]
 or run
 
 ```bash
-python src/court_cms_api/migrations/run_migrations.py <command> [options].
+python src/quick_chat_api/migrations/run_migrations.py <command> [options].
 ```
 
 ---

@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from data_ingestion.db import engine
-from quick_chat.core.models.models import (
+from quick_chat_api.core.models.models import (
     AddressDetail,
     AgencyBase,
     CaseAppearance,

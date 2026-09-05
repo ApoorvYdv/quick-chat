@@ -148,8 +148,7 @@ Prefer:
 async def get_case(
     session: AsyncSession,
     case_id: int,
-) -> CaseRecord | None:
-    ...
+) -> CaseRecord | None: ...
 ```
 
 over untyped functions.
@@ -227,9 +226,7 @@ Prefer SQLAlchemy 2.x style queries.
 Example:
 
 ```python
-stmt = select(CaseRecord).where(
-    CaseRecord.id == case_id
-)
+stmt = select(CaseRecord).where(CaseRecord.id == case_id)
 
 result = await session.execute(stmt)
 case = result.scalar_one_or_none()
@@ -246,7 +243,7 @@ Avoid legacy SQLAlchemy query patterns.
 The models under:
 
 ```text
-src/quick_chat/core/models/
+src/quick_chat_api/core/models/
 ```
 
 are considered stable project contracts.

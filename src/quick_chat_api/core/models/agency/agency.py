@@ -23,8 +23,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from uuid_utils.compat import uuid7
 
-from quick_chat.core.constants.constants import (
+from quick_chat_api.core.constants.constants import (
     AddressType,
     CaseAppearanceStatus,
     CaseStatus,
@@ -41,7 +42,7 @@ from quick_chat.core.constants.constants import (
     Sex,
     WarrantType,
 )
-from quick_chat.core.models import Base
+from quick_chat_api.core.models import Base
 
 EMBEDDING_DIM = 1536  # match your embedding model; centralize as a constant
 
@@ -53,7 +54,9 @@ class AgencyBase(Base):
 class CaseRecord(AgencyBase):
     __tablename__ = "case_record"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
 
     case_number: Mapped[str] = mapped_column(
         Text, nullable=False
@@ -165,8 +168,11 @@ class CaseRecord(AgencyBase):
 class Criminal(AgencyBase):
     __tablename__ = "criminal"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    case_record_id: Mapped[int] = mapped_column(
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="criminal_case_record_id_fkey"),
         unique=True,
         index=True,
@@ -196,8 +202,11 @@ class Criminal(AgencyBase):
 class VehicleDetail(AgencyBase):
     __tablename__ = "vehicle_detail"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    case_record_id: Mapped[int] = mapped_column(
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="vehicle_details_case_record_id_fkey"),
         index=True,
         nullable=False,
@@ -225,8 +234,11 @@ class VehicleDetail(AgencyBase):
 class PartyDetail(AgencyBase):
     __tablename__ = "party_detail"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    case_record_id: Mapped[int] = mapped_column(
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="party_detail_case_record_id_fkey"),
         index=True,
         nullable=False,
@@ -314,14 +326,17 @@ class PartyDetail(AgencyBase):
 class AddressDetail(AgencyBase):
     __tablename__ = "address_detail"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    party_detail_id: Mapped[int] = mapped_column(
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
+    party_detail_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("party_detail.id", name="address_detail_party_detail_id_fkey"),
         index=True,
         nullable=False,
     )
-    case_record_id: Mapped[int] = mapped_column(
-        Integer,
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="fk_address_detail_case_record_id"),
         nullable=False,
         index=True,
@@ -370,10 +385,12 @@ class AddressDetail(AgencyBase):
 class CaseCharge(AgencyBase):
     __tablename__ = "case_charge"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
 
-    case_record_id: Mapped[int] = mapped_column(
-        Integer,
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="case_charge_case_record_id_fkey"),
         nullable=False,
         index=True,
@@ -407,8 +424,11 @@ class CaseCharge(AgencyBase):
 class PaymentRecord(AgencyBase):
     __tablename__ = "payment_record"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    case_record_id: Mapped[int | None] = mapped_column(
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
+    case_record_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="payment_record_case_record_id_fkey"),
         index=True,
         nullable=True,
@@ -461,11 +481,13 @@ class PaymentRecord(AgencyBase):
 class ImposedDisposition(AgencyBase):
     __tablename__ = "imposed_disposition"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
 
     # Criminal
-    case_charge_id: Mapped[int | None] = mapped_column(
-        Integer,
+    case_charge_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey(
             "case_charge.id",
             name="imposed_disposition_case_charge_id_fkey",
@@ -474,8 +496,8 @@ class ImposedDisposition(AgencyBase):
         index=True,
     )
 
-    case_record_id: Mapped[int] = mapped_column(
-        Integer,
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey(
             "case_record.id",
             name="imposed_disposition_case_record_id_fkey",
@@ -513,16 +535,18 @@ class ImposedDisposition(AgencyBase):
 class ImposedSanction(AgencyBase):
     __tablename__ = "imposed_sanction"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    case_record_id: Mapped[int] = mapped_column(
-        Integer,
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="imposed_sanction_case_record_id_fkey"),
         nullable=False,
         index=True,
     )
     # Criminal
-    case_charge_id: Mapped[int | None] = mapped_column(
-        Integer,
+    case_charge_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey("case_charge.id", name="imposed_sanction_case_charge_id_fkey"),
         nullable=True,
         index=True,
@@ -553,9 +577,12 @@ class CaseAppearance(AgencyBase):
 
     __tablename__ = "case_appearance"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
 
-    case_record_id: Mapped[int] = mapped_column(
+    case_record_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", name="case_appearance_case_record_id_fkey"),
         nullable=False,
         index=True,
@@ -578,8 +605,8 @@ class CaseAppearance(AgencyBase):
     check_in_time: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    legal_representative_id: Mapped[int | None] = mapped_column(
-        Integer,
+    legal_representative_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey(
             "party_detail.id", name="case_appearance_legal_representative_id_fkey"
         ),
@@ -593,7 +620,8 @@ class CaseAppearance(AgencyBase):
         DateTime(timezone=True), nullable=True
     )
 
-    next_case_appearance_id: Mapped[int | None] = mapped_column(
+    next_case_appearance_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey(
             "case_appearance.id",
             name="case_appearance_next_case_appearance_id_fkey",
@@ -650,10 +678,12 @@ class CaseAppearance(AgencyBase):
 class AIKnowledgeSource(AgencyBase):
     __tablename__ = "ai_knowledge_source"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
 
-    case_record_id: Mapped[int | None] = mapped_column(
-        Integer,
+    case_record_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
@@ -699,15 +729,17 @@ class AIKnowledgeSource(AgencyBase):
 class AIKnowledgeChunk(AgencyBase):
     __tablename__ = "ai_knowledge_chunk"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID7] = mapped_column(
+        UUID, primary_key=True, default=uuid7, server_default=text("uuidv7()")
+    )
 
-    document_id: Mapped[int] = mapped_column(
-        Integer,
+    document_id: Mapped[UUID7] = mapped_column(
+        UUID,
         ForeignKey("ai_knowledge_source.id", ondelete="CASCADE"),
         nullable=False,
     )
-    case_record_id: Mapped[int | None] = mapped_column(
-        Integer,
+    case_record_id: Mapped[UUID7 | None] = mapped_column(
+        UUID,
         ForeignKey("case_record.id", ondelete="CASCADE"),
         nullable=True,
         index=True,

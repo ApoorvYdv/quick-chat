@@ -19,6 +19,7 @@ dependencies = [
     "psycopg2-binary>=2.9.12",
     "gunicorn>=26.2.0",
     "uvicorn[standard]>=0.52.4",
+    "pydantic-settings>=2.15.0",
 ]
 
 [build-system]
@@ -29,11 +30,11 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/quick_chat", "tests"]
+packages = ["src/quick_chat_api", "tests"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-  "src/quick_chat",
+  "src/quick_chat_api",
   "tests",
   "dockerfile",
   "docker-compose.yml",
@@ -48,7 +49,7 @@ quote-style = "double" # Optional, black-like style
 
 [tool.mypy]
 files = ["src"]
-exclude = ["quick_chat.migrations"]
+exclude = ["quick_chat_api.migrations"]
 
 [tool.pytest.ini_options]
 addopts = "-n auto"
@@ -56,4 +57,4 @@ pythonpath = ["src", "."]
 testpaths = ["tests"]
 
 [project.scripts]
-migrate = "quick_chat.migrations.run_migrations:main"
+migrate = "quick_chat_api.migrations.run_migrations:main"

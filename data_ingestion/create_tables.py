@@ -4,7 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from data_ingestion.db import engine
-from quick_chat.core.models.models import AgencyBase
+from quick_chat_api.core.models.models import AgencyBase
 
 SCHEMA_NAME = AgencyBase.metadata.schema
 

@@ -9,8 +9,8 @@ from sqlalchemy.orm import Session, with_loader_criteria
 # This import is required to register the @event.listens_for("after_flush")
 # hook for the ROA (Register of Actions) audit trail system.
 # Without it, automatic case history logging will silently fail.
-from quick_chat.core.models.agency.agency import AgencyBase
-from quick_chat.utils.common.logger import logger
+from quick_chat_api.core.models.agency.agency import AgencyBase
+from quick_chat_api.utils.common.logger import logger
 
 
 def _register_query_timing(sync_engine) -> None:

@@ -5,7 +5,11 @@ from alembic.operations import ops as alembic_ops
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from quick_chat.utils.database.engine import engine
+from quick_chat_api.core.database.config import DatabaseConfig
+
+engine = create_engine(
+    DatabaseConfig().build_db_url(async_driver=False),
+)
 
 
 def ensure_schema(schema: str):
@@ -69,6 +73,20 @@ def drop_optimistic_lock_trigger(table_name: str, schema: str | None) -> None:
     op.execute(f"DROP TRIGGER IF EXISTS optimistic_lock ON {schema}.{table_name};")
 
 
+@Operations.register_operation("drop_optimistic_lock_trigger")
+class DropOptimisticLockTriggerOp(MigrateOperation):
+    def __init__(self, table_name: str, schema: str):
+        self.table_name = table_name
+        self.schema = schema
+
+    @classmethod
+    def drop_optimistic_lock_trigger(cls, operations, table_name: str, schema: str):
+        return operations.invoke(cls(table_name, schema))
+
+    def reverse(self):
+        return CreateOptimisticLockTriggerOp(self.table_name, self.schema)
+
+
 # ── New: custom op classes so autogenerate emits the calls above ───────────────
 @Operations.register_operation("create_optimistic_lock_trigger")
 class CreateOptimisticLockTriggerOp(MigrateOperation):
@@ -82,20 +100,6 @@ class CreateOptimisticLockTriggerOp(MigrateOperation):
 
     def reverse(self):
         return DropOptimisticLockTriggerOp(self.table_name, self.schema)
-
-
-@Operations.register_operation("drop_optimistic_lock_trigger")
-class DropOptimisticLockTriggerOp(MigrateOperation):
-    def __init__(self, table_name: str, schema: str):
-        self.table_name = table_name
-        self.schema = schema
-
-    @classmethod
-    def drop_optimistic_lock_trigger(cls, operations, table_name: str, schema: str):
-        return operations.invoke(cls(table_name, schema))
-
-    def reverse(self):
-        return CreateOptimisticLockTriggerOp(self.table_name, self.schema)
 
 
 @Operations.implementation_for(CreateOptimisticLockTriggerOp)
@@ -151,7 +155,7 @@ def add_optimistic_lock_directives(directives, schema: str, metadata):
 @renderers.dispatch_for(CreateOptimisticLockTriggerOp)
 def render_create_optimistic_lock_trigger(autogen_context, op):
     autogen_context.imports.add(
-        "from court_cms_api.migrations.utils import create_optimistic_lock_trigger"
+        "from quick_chat_api.migrations.utils import create_optimistic_lock_trigger"
     )
     version_schema = autogen_context.migration_context.version_table_schema
     if version_schema and op.schema == version_schema:
@@ -166,7 +170,7 @@ def render_create_optimistic_lock_trigger(autogen_context, op):
 @renderers.dispatch_for(DropOptimisticLockTriggerOp)
 def render_drop_optimistic_lock_trigger(autogen_context, op):
     autogen_context.imports.add(
-        "from court_cms_api.migrations.utils import drop_optimistic_lock_trigger"
+        "from quick_chat_api.migrations.utils import drop_optimistic_lock_trigger"
     )
     version_schema = autogen_context.migration_context.version_table_schema
     if version_schema and op.schema == version_schema:
