@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from decimal import Decimal
 
+from pgvector.sqlalchemy import Vector
 from pydantic import UUID7, EmailStr
 from sqlalchemy import (
     ARRAY,
@@ -40,7 +41,13 @@ from quick_chat.core.constants.constants import (
     Sex,
     WarrantType,
 )
-from quick_chat.core.models import AgencyBase
+from quick_chat.core.models import Base
+
+EMBEDDING_DIM = 1536  # match your embedding model; centralize as a constant
+
+
+class AgencyBase(Base):
+    __abstract__ = True
 
 
 class CaseRecord(AgencyBase):
@@ -638,3 +645,100 @@ class CaseAppearance(AgencyBase):
         self._party_pretrial_plea = value
 
     __table_args__ = (Index("idx_case_record_id", "case_record_id"),)
+
+
+class AIKnowledgeSource(AgencyBase):
+    __tablename__ = "ai_knowledge_source"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    case_record_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("case_record.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    source_type: Mapped[str] = mapped_column(Text, nullable=False, index=True)
+    source_table: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    external_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mime_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    storage_uri: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    source_metadata: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(
+        Text, nullable=False, default="pending", index=True
+    )
+
+    case_record: Mapped[CaseRecord | None] = relationship("CaseRecord")
+    chunks: Mapped[list[AIKnowledgeChunk]] = relationship(
+        "AIKnowledgeChunk", back_populates="document", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        # dedupe re-ingestion of the same underlying record/document
+        UniqueConstraint(
+            "source_table",
+            "source_id",
+            "source_type",
+            name="uq_ai_knowledge_source_origin",
+        ),
+        Index("ix_ai_knowledge_source_case_id", "case_record_id"),
+        Index(
+            "ix_ai_knowledge_source_metadata_gin",
+            "source_metadata",
+            postgresql_using="gin",
+        ),
+    )
+
+
+class AIKnowledgeChunk(AgencyBase):
+    __tablename__ = "ai_knowledge_chunk"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    document_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("ai_knowledge_source.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    case_record_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("case_record.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    token_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    embedding: Mapped[list[float]] = mapped_column(
+        Vector(EMBEDDING_DIM), nullable=False
+    )
+    embedding_model: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding_version: Mapped[str] = mapped_column(Text, nullable=False)
+
+    metadata_: Mapped[dict] = mapped_column(
+        "metadata", JSONB, default=dict, nullable=False
+    )
+
+    document: Mapped[AIKnowledgeSource] = relationship(
+        "AIKnowledgeSource", back_populates="chunks"
+    )
+    case_record: Mapped[CaseRecord | None] = relationship("CaseRecord")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "document_id", "chunk_index", name="uq_ai_knowledge_chunk_doc_idx"
+        ),
+        Index("ix_ai_knowledge_chunk_case_id", "case_record_id"),
+        Index("ix_ai_knowledge_chunk_content_hash", "content_hash"),
+        # HNSW is the current recommended pgvector index for query quality/speed;
+        # created via raw migration DDL, not expressible in SQLAlchemy Core directly
+    )

@@ -1,0 +1,54 @@
+services:
+  # This service runs the postgres DB used by fastapi app server
+  postgres_db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: quick_chat
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/18/docker
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d quick_chat" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - court-cms-net
+
+  # This service runs the fastapi app server for running APIs
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: debug
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: quick_chat
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgres_db
+      S3_BUCKET: quick-chat-storage
+      AWS_ACCESS_KEY_ID: username
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_DEFAULT_REGION: ap-south-1
+    # command: [ "uv", "run", "--", "gunicorn", "quick_chat.main:app", "--workers=4", "--worker-class=quick_chat.workers.RestartableUvicornWorker", "--bind=0.0.0.0:8000", "--access-logfile=-", "--reload", "--log-level=debug" ]
+    depends_on:
+      - postgres_db
+    volumes:
+      - ./src/quick_chat:/quick_chat/src/quick_chat
+      - ./tests:/quick_chat/tests
+    networks:
+      - court-cms-net
+
+networks:
+  court-cms-net:
+    driver: bridge
+
+volumes:
+  pg_data:

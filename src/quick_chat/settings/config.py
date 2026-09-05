@@ -8,7 +8,12 @@ class Settings(BaseSettings):
     """Application settings from environment variables."""
 
     # Database
-    DATABASE_URL: str = Field(description="Database connection URL", required=True)
+    DB_USERNAME: str = Field(description="Database username", required=True)
+    DB_PASSWORD: str = Field(description="Database password", required=True)
+    DB_ENGINE: str = Field(description="Database engine", required=True)
+    DB_HOST: str = Field(description="Database host", required=True)
+    DB_PORT: str = Field(description="Database port", required=True)
+    DB_NAME: str = Field(description="Database name", required=True)
     DB_POOL_SIZE: int = Field(
         default=5, description="Database connection pool size", ge=1
     )

@@ -31,7 +31,7 @@ def current_user():
     return "uuid1"
 
 
-class AgencyBase(DeclarativeBase):
+class Base(DeclarativeBase):
     metadata = MetaData(schema="southern_ute")
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -68,7 +68,7 @@ class AgencyBase(DeclarativeBase):
         seen = seen | {id(self)}  # new set per branch, not mutated in place
 
         def convert_value(value):
-            if isinstance(value, AgencyBase):
+            if isinstance(value, Base):
                 return value.to_dict(seen)
             elif isinstance(value, dict):
                 return {key: convert_value(val) for key, val in value.items()}
