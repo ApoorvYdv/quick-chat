@@ -4,6 +4,31 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 
 ---
 
+## 2026-09-06 — Session: DB source adapters (Phase 2, PLAN.md §5)
+
+**Done this session:**
+- Built `CaseKnowledgeSourceAdapter` at [`src/quick_chat_api/modules/embedding/db_adapters.py`](src/quick_chat_api/modules/embedding/db_adapters.py): `discover_case`/`discover_case_summary`/`discover_parties`/`discover_charges`/`discover_appearances` (one eager-loaded query each) plus `discover_all` (single eager-loaded query, all 5 `DiscoveredEntity`s) — the method `ingest_case()` should call next.
+- Adapter is read-only: returns `DiscoveredEntity` value objects (source identity + `ProjectedDocument`), never computes `content_hash` and never touches `ai_knowledge_source`/`ai_knowledge_chunk` — that's left to the ingestion service (§11) per the user's explicit call this session.
+- Added `tests/modules/embedding/test_db_adapters.py` (7 tests, mocked `AsyncSession`) — identity-building per entity type, `discover_all` ordering/composition, `CaseNotFoundError` on a missing case. All 21 tests in the repo pass (`uv run pytest`).
+- Updated `.claude/rules/coding-patterns.md` with a new documented shape: "single class for related, non-interchangeable operations" (one class, one file, no registry/factory/base.py) — for subsystems like this one where the methods are complementary operations, not swappable strategies. `db_adapters.py` is now that pattern's reference implementation, alongside `core/llm/embedding/` for the pluggable-subsystem pattern.
+
+**Decisions made:**
+- Structure: plain module with one class (`CaseKnowledgeSourceAdapter`), not Interface + Registry + Factory — user's explicit call after being asked, since these methods aren't interchangeable implementations of one interface. Documented as a named pattern rather than a one-off exception (see coding-patterns.md update above).
+- Hash/skip ownership: adapters are read-only (discover + project only); the ingestion service (§11, not yet built) owns `content_hash` computation, the unchanged-skip comparison against existing `AIKnowledgeSource` rows, and all writes.
+- Scope: all 5 Phase 2 source types (`case`, `case_summary`, `party`, `charge`, `appearance`) covered now, not just `case`/`case_summary`.
+- Eager-load depth: full depth in one query via `_load_case_record_with_relations` — `parties`, `charges`+disposition+sanctions, `appearance_history`+`legal_representative`, `payment_records` — so every relationship-aware projector branch gets exercised against real (if still test-mocked) data instead of degrading to "omit section".
+
+**New open questions:**
+- None new. Open Decisions #1 (prod embedding provider/model) and #2 (new SDK dependency) remain open from prior sessions; the `EMBEDDING_DIM` 1536→768 migration is still pending on the user's side (see prior entry below).
+- No real DB/integration test fixture exists yet — this session's tests mock `AsyncSession.execute`, so the `selectinload` options in `_load_case_record_with_relations` are exercised for shape/dispatch logic only, not verified against a real Postgres tenant schema for actual N+1 avoidance. Flagged in `PLAN.md` §5 and still open under §14.
+
+**Next concrete action:**
+- Build the chunking step (`PLAN.md` §7) — likely a passthrough (one chunk per projected document) for Phase 2, unless a `case_summary` document exceeds the embedding model's token limit.
+- Build the minimal `ingest_case(case_id)` path (`PLAN.md` §11): call `CaseKnowledgeSourceAdapter.discover_all(case_id)` → close the read session → compute `content_hash` per `DiscoveredEntity` → compare against existing `AIKnowledgeSource` rows to skip unchanged → `get_embedding_provider().embed_documents(...)` (no open transaction) → new DB transaction → bulk upsert `AIKnowledgeSource`/`AIKnowledgeChunk` → commit.
+- Once `ingest_case()` works end-to-end against real ingested data, add an integration test against a real tenant schema (or at least a real Postgres test DB) to actually verify the eager-loading avoids N+1, before moving to Phase 3.
+
+---
+
 ## 2026-09-06 — Session: semantic projection layer (Phase 2, PLAN.md §4)
 
 **Done this session:**
@@ -85,11 +110,10 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 
 ## Next Concrete Action (start here next session)
 
-1. Build the DB source adapters (`PLAN.md` §5, proposed `src/quick_chat_api/modules/embedding/db_adapters.py`): discover records → eager-load relationships (`selectinload`, tenant-scoped via `session_context()`) → call `get_projector(source_type).project(entity)` → compute SHA-256 `content_hash` → skip if unchanged.
-2. Build the chunking step (`PLAN.md` §7) — likely a passthrough (one chunk per projected document) for Phase 2, unless a `case_summary` document exceeds the embedding model's token limit.
-3. Build the minimal ingestion path for one entity type (`ingest_case(case_id)`) end-to-end: DB read → project → hash → close session → `get_embedding_provider().embed_documents(...)` → new DB transaction → bulk upsert `AIKnowledgeSource`/`AIKnowledgeChunk` (see `PLAN.md` §9 for the async/DB-safety sequencing — never hold a transaction open across the embedding call).
-4. Write a one-off backfill script to run `ingest_case()` over every already-ingested `CaseRecord` (this is the immediate payoff — makes the already-loaded data queryable).
-5. Only after (4) is validated manually (spot-check a few embeddings/retrieval results), move to Phase 3 (related entities) per `PLAN.md` §15.
+1. Build the chunking step (`PLAN.md` §7) — likely a passthrough (one chunk per projected document) for Phase 2, unless a `case_summary` document exceeds the embedding model's token limit.
+2. Build the minimal ingestion path for one entity type (`ingest_case(case_id)`) end-to-end: `CaseKnowledgeSourceAdapter.discover_all(case_id)` → hash each `DiscoveredEntity` (SHA-256) → close session → skip unchanged (compare against existing `AIKnowledgeSource.content_hash`) → `get_embedding_provider().embed_documents(...)` → new DB transaction → bulk upsert `AIKnowledgeSource`/`AIKnowledgeChunk` (see `PLAN.md` §9 for the async/DB-safety sequencing — never hold a transaction open across the embedding call).
+3. Write a one-off backfill script to run `ingest_case()` over every already-ingested `CaseRecord` (this is the immediate payoff — makes the already-loaded data queryable).
+4. Only after (3) is validated manually (spot-check a few embeddings/retrieval results), move to Phase 3 (related entities) per `PLAN.md` §15.
 
 Do not start on retrieval (`PLAN.md` §10) or Phase 3+ until step 4 above is done and spot-checked — see `CLAUDE.md` §12 ("do not blindly increase top_k / jump ahead").
 

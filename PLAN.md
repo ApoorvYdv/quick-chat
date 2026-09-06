@@ -90,13 +90,17 @@ Unit tests: `tests/modules/embedding/projectors/test_projectors.py` — PII excl
 
 ---
 
-## 5. Database Source Adapters — `[ ]` NOT STARTED
+## 5. Database Source Adapters — `[x]` DONE (Phase 2 entities)
 
-Proposed location: `src/quick_chat_api/modules/embedding/db_adapters.py` (or one per entity if it grows large).
+Built at [`src/quick_chat_api/modules/embedding/db_adapters.py`](src/quick_chat_api/modules/embedding/db_adapters.py) as a single class, `CaseKnowledgeSourceAdapter`, per `.claude/rules/coding-patterns.md`'s "single class for related, non-interchangeable operations" shape (not the Interface + Registry + Factory pattern — these methods aren't swappable implementations of one interface).
 
-Each adapter: discover records → eager-load relationships (`selectinload`/`joinedload`, avoid N+1) → run through projector → compute SHA-256 `content_hash` → skip if unchanged → chunk if needed → hand off to embedding step → bulk upsert `AIKnowledgeChunk` rows.
+- `discover_case(case_id)` / `discover_case_summary(case_id)` / `discover_parties(case_id)` / `discover_charges(case_id)` / `discover_appearances(case_id)` — one eager-loaded query each, each calling the matching projector via `get_projector(...)`.
+- `discover_all(case_id)` — the method `ingest_case()` (§11) should call: one eager-loaded query covering every Phase 2 entity for a case, returning all 5 `DiscoveredEntity`s in one round trip.
+- `_load_case_record_with_relations` eager-loads exactly what the relationship-aware projectors need: `parties`, `charges` (+ `imposed_disposition`, `imposed_sanctions`), `appearance_history` (+ `legal_representative`), `payment_records`. Back-populated relationships (`case_record` on each child) come for free in memory — no extra query — because SQLAlchemy sets both sides of a `back_populates` pair when the collection is loaded; only `legal_representative` (not back-populated) needs its own `selectinload`.
+- Read-only by design: **does not** compute `content_hash` or touch `ai_knowledge_source`/`ai_knowledge_chunk` — it returns `DiscoveredEntity` (source_type, source_table, source_id, case_record_id, `ProjectedDocument`) value objects. Hashing, the unchanged-skip decision, and all knowledge-table writes are the ingestion service's job (§11), keeping the DB read transaction, the embedding API call, and the knowledge-table write transaction on separate sides of the §9 boundary.
+- Raises module-local `CaseNotFoundError` when `case_id` doesn't resolve in the current tenant schema.
 
-Keep DB loading (read transaction) separate from the embedding API call — see §9.
+Unit tests: `tests/modules/embedding/test_db_adapters.py` — mocks `AsyncSession.execute` (no DB fixture infra exists yet, see §14) to verify each `discover_*` method's identity-building and projector dispatch, `discover_all`'s ordering/composition, and the `CaseNotFoundError` path. Real eager-loading behavior (the `selectinload` options actually preventing N+1 against Postgres) is **not** covered here — that needs an integration test against a real tenant schema, still open per §14.
 
 ---
 
@@ -234,7 +238,7 @@ Do not jump ahead — Phase 2 must be working and validated (retrieval quality c
 - [x] Alembic migration (knowledge tables + vectorscale extension)
 - [x] SQLAlchemy models (`AIKnowledgeSource`, `AIKnowledgeChunk`)
 - [x] Semantic projector framework (Phase 2 entities: case, party, charge, appearance, case_summary)
-- [ ] DB source adapters
+- [x] DB source adapters
 - [ ] File parsers/adapters (Phase 4)
 - [ ] Chunking module
 - [ ] Embedding provider abstraction

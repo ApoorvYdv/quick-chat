@@ -148,6 +148,50 @@ Example: chunking strategies, projectors, retrievers.
 
 ---
 
+## The other shape: a single class for a set of related, non-interchangeable operations
+
+Not every subsystem that touches multiple entity types is a *pluggable*
+subsystem. A DB source adapter, for example, has one method per entity type
+(`discover_case`, `discover_parties`, `discover_charges`, ...) — but those
+methods are not interchangeable implementations of one interface selected
+by config; they are complementary operations that often run together
+(`discover_all`) and share private helpers (a shared eager-loading query,
+shared identity-building logic). Forcing this into Interface + Registry +
+Factory would add a registry no caller ever needs to swap.
+
+For this shape, use **one class, one file** instead:
+
+Reference implementation: `src/quick_chat_api/modules/embedding/db_adapters.py`
+(`CaseKnowledgeSourceAdapter`).
+
+- One class named for what it does (`CaseKnowledgeSourceAdapter`, not
+  `CaseAdapterImpl` or similar), constructed with whatever per-call
+  dependency it needs (here, an `AsyncSession`) — never a global singleton.
+- Public methods are one per entity/operation (`discover_case`,
+  `discover_parties`, ...), each independently callable, plus a composite
+  method (`discover_all`) when callers commonly want all of them together —
+  the composite should reuse the same private helpers, not duplicate query
+  logic.
+- Private `_`-prefixed helpers hold anything shared (a query builder, a
+  per-entity projection step) so the public methods stay short.
+- A small, module-local exception (`CaseNotFoundError(RuntimeError)`) is
+  enough when the subsystem is this scoped — it does not need its own
+  `exceptions.py` unless the exception hierarchy grows past 2-3 classes.
+- Return plain `@dataclass(frozen=True)` value objects (`DiscoveredEntity`)
+  for what the class hands back, not a raw ORM object or a bare tuple.
+- No registry, no factory, no `base.py` ABC. Callers import the class
+  directly and construct it where they have the dependency it needs (a
+  controller or the ingestion service constructing it with its own
+  session).
+
+Use this shape whenever a new component's methods answer "what are the
+related operations for this thing" rather than "which of these
+interchangeable strategies do we use" — chunking orchestration, retrieval
+context assembly, and similar coordinators are more likely to be this shape
+than the plugin shape above.
+
+---
+
 ## General code quality rules (apply everywhere, not just plugin packages)
 
 These restate and sharpen `CLAUDE.md` §4 specifically for how an agent
