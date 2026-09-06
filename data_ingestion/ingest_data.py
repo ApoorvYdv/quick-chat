@@ -1,18 +1,19 @@
 import asyncio
 import json
+import uuid
 from datetime import UTC, date, time
 from decimal import Decimal
 from pathlib import Path
 
 from dateutil.parser import parse as parse_dt
-from sqlalchemy import Date, DateTime, Numeric, Time, text
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import Date, DateTime, Numeric, Time
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
 from data_ingestion.db import engine
-from quick_chat_api.core.models.models import (
+from quick_chat_api.core.models.agency.agency import (
     AddressDetail,
-    AgencyBase,
     CaseAppearance,
     CaseCharge,
     CaseRecord,
@@ -80,28 +81,73 @@ def coerce_row(model, row: dict) -> dict:
                 value = value.replace(tzinfo=UTC)
         elif isinstance(col_type, Numeric) and isinstance(value, str):
             value = Decimal(value)
+        elif isinstance(col_type, SQLUUID) and isinstance(value, str):
+            value = uuid.UUID(value)
 
         out[key] = value
     return out
 
 
+UUID_KEY = "unique_reference_id"
+
+
+def build_id_map(case: dict) -> dict[int, str]:
+    """Map every record's legacy integer `id` (case, party, charge, ...) to the
+    UUIDv7 the source system already assigns it in `unique_reference_id`."""
+    id_map: dict[int, str] = {}
+
+    def _collect(node: object) -> None:
+        if isinstance(node, dict):
+            source_id = node.get("id")
+            record_uuid = node.get(UUID_KEY)
+            if isinstance(source_id, int) and isinstance(record_uuid, str):
+                id_map[source_id] = record_uuid
+            for value in node.values():
+                _collect(value)
+        elif isinstance(node, list):
+            for item in node:
+                _collect(item)
+
+    _collect(case)
+    return id_map
+
+
+def remap_ids(row: dict, id_map: dict[int, str]) -> dict:
+    """Replace `id` and any `*_id` foreign key still holding a legacy integer
+    with that record's UUIDv7, per the case-scoped id_map."""
+    remapped = dict(row)
+    for key, value in row.items():
+        if (key == "id" or key.endswith("_id")) and isinstance(value, int):
+            uuid_value = id_map.get(value)
+            if uuid_value is not None:
+                remapped[key] = uuid_value
+    return remapped
+
+
 def build_rows(case: dict) -> dict[str, list[dict]]:
     rows: dict[str, list[dict]] = {table: [] for table in TABLE_ORDER}
+    id_map = build_id_map(case)
     case_id = case["id"]
 
-    rows["case_record"].append(coerce_row(CaseRecord, case))
+    rows["case_record"].append(coerce_row(CaseRecord, remap_ids(case, id_map)))
 
     if case.get("criminal"):
-        rows["criminal"].append(coerce_row(Criminal, case["criminal"]))
+        rows["criminal"].append(
+            coerce_row(Criminal, remap_ids(case["criminal"], id_map))
+        )
 
     for vehicle in case.get("vehicles") or []:
-        rows["vehicle_detail"].append(coerce_row(VehicleDetail, vehicle))
+        rows["vehicle_detail"].append(
+            coerce_row(VehicleDetail, remap_ids(vehicle, id_map))
+        )
 
     for party in case.get("parties") or []:
-        rows["party_detail"].append(coerce_row(PartyDetail, party))
+        rows["party_detail"].append(coerce_row(PartyDetail, remap_ids(party, id_map)))
         for address in party.get("addresses") or []:
             address = {**address, "case_record_id": case_id}
-            rows["address_detail"].append(coerce_row(AddressDetail, address))
+            rows["address_detail"].append(
+                coerce_row(AddressDetail, remap_ids(address, id_map))
+            )
 
     # "charges" is a light list; "dispositions.charge_dispositions" carries the
     # full charge fields plus the nested imposed_disposition, keyed by charge id.
@@ -120,21 +166,29 @@ def build_rows(case: dict) -> dict[str, list[dict]]:
                 "case_charge_id": charge_disposition["id"],
                 "case_record_id": charge_disposition.get("case_record_id", case_id),
             }
-            rows["imposed_disposition"].append(coerce_row(ImposedDisposition, imposed))
+            rows["imposed_disposition"].append(
+                coerce_row(ImposedDisposition, remap_ids(imposed, id_map))
+            )
 
     for charge in charges_by_id.values():
         charge = {**charge, "case_record_id": case_id}
-        rows["case_charge"].append(coerce_row(CaseCharge, charge))
+        rows["case_charge"].append(coerce_row(CaseCharge, remap_ids(charge, id_map)))
 
     for hearing in case.get("hearings") or []:
-        rows["case_appearance"].append(coerce_row(CaseAppearance, hearing))
+        rows["case_appearance"].append(
+            coerce_row(CaseAppearance, remap_ids(hearing, id_map))
+        )
 
     for payment in case.get("payments") or []:
         payment = {**payment, "case_record_id": case_id}
-        rows["payment_record"].append(coerce_row(PaymentRecord, payment))
+        rows["payment_record"].append(
+            coerce_row(PaymentRecord, remap_ids(payment, id_map))
+        )
 
     for sanction in case.get("sanctions") or []:
-        rows["imposed_sanction"].append(coerce_row(ImposedSanction, sanction))
+        rows["imposed_sanction"].append(
+            coerce_row(ImposedSanction, remap_ids(sanction, id_map))
+        )
 
     return rows
 
@@ -189,18 +243,6 @@ async def upsert(conn: AsyncConnection, model, values: list[dict]) -> int:
     return result.rowcount
 
 
-async def reset_sequences(conn: AsyncConnection) -> None:
-    """Advance each table's id sequence past the max explicitly-inserted id."""
-    for table in AgencyBase.metadata.tables.values():
-        full_name = f"{table.schema}.{table.name}" if table.schema else table.name
-        await conn.execute(
-            text(
-                f"SELECT setval(pg_get_serial_sequence('{full_name}', 'id'), "
-                f"GREATEST((SELECT COALESCE(MAX(id), 1) FROM {full_name}), 1))"
-            )
-        )
-
-
 async def ingest_file(conn: AsyncConnection, path: Path) -> None:
     print(f"Ingesting {path.name}...")
     rows = load_rows(path)
@@ -221,7 +263,6 @@ async def main() -> None:
     async with engine.begin() as conn:
         for path in files:
             await ingest_file(conn, path)
-        await reset_sequences(conn)
 
     await engine.dispose()
     print("Done.")
