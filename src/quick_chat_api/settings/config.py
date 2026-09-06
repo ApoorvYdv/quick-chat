@@ -49,6 +49,32 @@ class Settings(BaseSettings):
         default=None, description="API key for a remote embedding provider (if any)"
     )
 
+    # Chunking
+    CHUNKING_STRATEGY: str = Field(
+        default="structured",
+        description="Chunking strategy to use: 'structured' (field-boundary-aware, "
+        "for projected structured documents)",
+    )
+    CHUNKING_VERSION: str = Field(
+        default="v1",
+        description="Chunking strategy version, stamped into each chunk's metadata "
+        "so re-chunking with a changed strategy can be detected",
+    )
+    CHUNK_TOKEN_SAFETY_MARGIN: float = Field(
+        default=0.9,
+        description="Fraction of the embedding provider's max_tokens usable per "
+        "chunk, leaving headroom for tokenizer special tokens",
+        gt=0,
+        le=1,
+    )
+    CHUNK_OVERLAP_RATIO: float = Field(
+        default=0.15,
+        description="Fraction of a token-window slice to overlap with the next "
+        "slice when a single field's text alone exceeds the chunk token budget",
+        ge=0,
+        lt=1,
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

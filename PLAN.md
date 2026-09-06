@@ -113,16 +113,36 @@ Flow: `file → parser → normalized document → content cleaning → metadata
 - Raw binaries go to **S3** (`AWS_S3_BUCKET`, already configured in `settings/config.py`) — never store file bytes in Postgres. `ai_knowledge_source.storage_uri` holds the S3 key/URI.
 - For PDFs, retain page number / section metadata in chunk `metadata` JSONB for provenance.
 - Parser library choices (PDF/DOCX/OCR) are new dependencies — require approval per `CLAUDE.md` §5 when this phase starts.
+- **Chunking for this phase is decided (2026-09-06): LangChain's `RecursiveCharacterTextSplitter` (default) and `SemanticChunker` (for narrative sections where recursive splitting alone under-serves retrieval quality) — see §7 below for the full rationale and how this plugs into the existing chunking registry.**
 
 ---
 
-## 7. Chunking — `[ ]` NOT STARTED
+## 7. Chunking — `[x]` DONE for Phase 2 (structured entities)
 
-Proposed location: `src/quick_chat_api/modules/embedding/chunking.py`.
+Built at `src/quick_chat_api/modules/embedding/chunking/`, following the Interface + Registry + Factory pattern (mirrors `core/llm/embedding/`), per the user's explicit call to build the pluggable shape now rather than wait for a second chunker implementation (Phase 4 file chunking) to show up.
 
-- Structured entities: generally one logical chunk per semantic unit (a case summary, a charge-with-context, an appearance-with-context) — chunking mainly matters when a projected document exceeds the embedding model's token limit.
-- Large files (Phase 4): token-aware chunking, configurable size/overlap, preserve page/section metadata.
-- Make chunk size/overlap configurable via `Settings`; version the chunking strategy (store in chunk `metadata`, per §2 gap).
+- `base.py` — `Chunker` ABC (`chunk(content, document_metadata, provider) -> list[Chunk]`), `Chunk` dataclass (content, index, token_count, metadata), `SplitReason` enum (`single_chunk`/`field_packed`/`token_window_fallback`).
+- `exceptions.py` / `registry.py` / `factory.py` — `ChunkingError`, `UnknownChunkerError`, `register_chunker(name)`, `get_chunker()` (`lru_cache`d, keyed on `Settings.CHUNKING_STRATEGY`).
+- `providers/structured.py` — `StructuredFieldChunker` (`"structured"`, the default): splits a projected document along the field-line boundaries the projectors already emit (`_formatting.join_lines`), greedily packing whole lines into a chunk under the token budget rather than a blind fixed-size window — a field is never truncated mid-way. Falls back to an overlapping token-window split only for a single field whose own text (e.g. a long `additional_notes`) exceeds the budget alone.
+- Token budget is derived from the **real embedding-model tokenizer**, not an estimate: `EmbeddingProvider` (`core/llm/embedding/base.py`) gained `max_tokens`/`count_tokens()`, implemented in `LocalSentenceTransformerProvider` via the model's own HF tokenizer (`model.tokenizer.encode(...)`, `model.get_max_seq_length()`). `Settings.CHUNK_TOKEN_SAFETY_MARGIN` (default `0.9`) leaves headroom below the model's absolute max.
+- Parent-child context: no schema change needed or added — sibling chunks already share `document_id` (+ `chunk_index`), which is sufficient for retrieval to expand a matched chunk into its full document later; each chunk's metadata carries `total_chunks` for that purpose now.
+- New settings: `CHUNKING_STRATEGY` (default `"structured"`), `CHUNKING_VERSION` (default `"v1"`, stamped into every chunk's metadata per §2's gap), `CHUNK_TOKEN_SAFETY_MARGIN`, `CHUNK_OVERLAP_RATIO` (default `0.15`, used only by the token-window fallback).
+
+Unit tests: `tests/modules/embedding/chunking/test_structured_chunker.py` (single-chunk passthrough, multi-line packing without mid-field splits, oversized-field overlapping fallback incl. a degenerate all-words-oversized termination case, metadata merge, registry/factory), `tests/core/llm/embedding/test_local_sentence_transformer.py` (`max_tokens`/`count_tokens` against a mocked tokenizer, dimension-mismatch still raises).
+
+**Not yet built:** an actual second chunker for Phase 4 PDF/DOCX/TXT text — the registry/factory exist and are ready for it.
+
+### Phase 4 chunking decision (2026-09-06, recorded ahead of that phase starting)
+
+The hand-rolled `StructuredFieldChunker` above is **kept as-is** for every source type built so far (`case`, `case_summary`, `party`, `charge`, `appearance`) — it is field-boundary-aware in a way a generic text splitter cannot be, because it understands the projectors' own line format. Do not replace it or route it through a third-party splitter.
+
+For Phase 4 (free-flowing file/PDF/DOCX text, which has no field-line structure to exploit), add new chunkers to the same registry instead of extending `StructuredFieldChunker`:
+
+- **`RecursiveCharacterTextSplitter`** (LangChain) as the Phase 4 default — the standard production baseline for narrative/unstructured text: splits on a prioritized separator list (`\n\n`, `\n`, sentence, word) with configurable size/overlap, degrading gracefully instead of cutting mid-word. Register as `"recursive"` in `chunking/providers/`.
+- **`SemanticChunker`** (LangChain, embedding-similarity-based boundary detection) as an opt-in strategy for sections where recursive splitting's fixed size/separator heuristics measurably under-serve retrieval quality (e.g. long narrative case notes/attachments with weak paragraph structure) — register as `"semantic"`. Do not default to it: it costs an embedding call per candidate boundary, which is real latency/cost `CLAUDE.md` §30 says to weigh against `"recursive"`'s near-zero cost. Adopt it per source type only after comparing retrieval quality against `"recursive"` on real Phase 4 documents, not speculatively.
+- Both wrap `langchain-text-splitters` (recursive splitter has no LLM/embedding dependency; `SemanticChunker` needs an embedding call — reuse `get_embedding_provider()` via a small LangChain `Embeddings` adapter rather than a second embedding client). **New dependency (`langchain-text-splitters`, and `langchain-experimental` if `SemanticChunker` isn't in core) — needs the `uv add` approval step in `CLAUDE.md` §5 when Phase 4 implementation actually starts; this entry records the *choice*, not the install.**
+- Both still return the same `Chunk` dataclass (content, index, token_count via `EmbeddingProvider.count_tokens`, metadata) and go through `get_chunker()` like `"structured"` — `Settings.CHUNKING_STRATEGY` becomes source-type-aware at that point (e.g. resolve strategy from `AIKnowledgeSourceType` for file sources vs. the existing global default for Phase 2 entities), since a single global chunking strategy stops making sense once structured and file sources coexist.
+- `CHUNKING_VERSION` bumps whenever the Phase 4 default changes, per the existing versioning contract in §2/§7 above.
 
 ---
 
@@ -240,7 +260,7 @@ Do not jump ahead — Phase 2 must be working and validated (retrieval quality c
 - [x] Semantic projector framework (Phase 2 entities: case, party, charge, appearance, case_summary)
 - [x] DB source adapters
 - [ ] File parsers/adapters (Phase 4)
-- [ ] Chunking module
+- [x] Chunking module
 - [ ] Embedding provider abstraction
 - [ ] Ingestion service
 - [ ] Retrieval service

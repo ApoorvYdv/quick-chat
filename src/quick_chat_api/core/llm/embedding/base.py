@@ -12,12 +12,26 @@ from abc import ABC, abstractmethod
 
 
 class EmbeddingProvider(ABC):
-    """Turns text into vectors for storage (documents) or search (queries)."""
+    """Turns text into vectors for storage (documents) or search (queries).
+
+    Also exposes the model's real tokenizer so callers (chunking, in
+    particular) can size text against the model's actual input limit
+    instead of guessing from character/word counts.
+    """
 
     @property
     @abstractmethod
     def dimension(self) -> int:
         """Output vector width. Must match `Settings.EMBEDDING_DIM`."""
+
+    @property
+    @abstractmethod
+    def max_tokens(self) -> int:
+        """Maximum input sequence length the model accepts, in tokens."""
+
+    @abstractmethod
+    def count_tokens(self, text: str) -> int:
+        """Exact token count for `text` under this model's own tokenizer."""
 
     @abstractmethod
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

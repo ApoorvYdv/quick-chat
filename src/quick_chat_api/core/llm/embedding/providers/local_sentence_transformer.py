@@ -55,10 +55,20 @@ class LocalSentenceTransformerProvider(EmbeddingProvider):
                 "width) to match, or choose a different model."
             )
         self._dimension = actual_dimension
+        self._max_tokens = self._model.get_max_seq_length() or 384
 
     @property
     def dimension(self) -> int:
         return self._dimension  # type:ignore
+
+    @property
+    def max_tokens(self) -> int:
+        return self._max_tokens
+
+    def count_tokens(self, text: str) -> int:
+        # The model's own HF tokenizer, not a batch/padded call, so the
+        # count reflects exactly what this text alone would encode to.
+        return len(self._model.tokenizer.encode(text, add_special_tokens=True))
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         if not texts:
