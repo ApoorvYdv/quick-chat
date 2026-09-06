@@ -1,544 +1,240 @@
-You are implementing a production-grade knowledge ingestion and retrieval layer for an existing FastAPI + SQLAlchemy Async + PostgreSQL application.
+# Quick Chat — AI Knowledge / Vector Embeddings Plan
 
-The application uses TigerCloud/PostgreSQL as the system of record.
+Status legend: `[x]` done, `[~]` partially done, `[ ]` not started.
 
-The existing SQLAlchemy models include:
+This plan is the original spec reconciled against the actual repository state as of 2026-09-06. It references real paths — see `CHECKPOINT.md` for a compact, dated progress log to resume from.
 
-- CaseRecord
-- Criminal
-- VehicleDetail
-- PartyDetail
-- AddressDetail
-- CaseCharge
-- PaymentRecord
-- ImposedDisposition
-- ImposedSanction
-- CaseAppearance
+---
 
-CaseRecord is the root entity and has relationships to appearances, criminal information, vehicles, parties, addresses, charges, sanctions, dispositions, and payments.
+## 0. Reality Check (repo inspection results)
 
-Do not modify existing transactional tables to add embedding columns.
+Before any implementation, the following were inspected and confirmed:
 
-Instead introduce a centralized AI knowledge layer in the same PostgreSQL database using pgvector.
+- **AgencyBase / tenant model**: [`src/quick_chat_api/core/models/agency/agency.py`](src/quick_chat_api/core/models/agency/agency.py) — `AgencyBase` (line ~50) is the tenant-scoped declarative base; tenant isolation is via PostgreSQL schema-per-agency + `session_context()`, not a tenant_id column.
+- **Business models** (already exist, do not modify): `CaseRecord`, `Criminal`, `VehicleDetail`, `PartyDetail`, `AddressDetail`, `CaseCharge`, `PaymentRecord`, `ImposedDisposition`, `ImposedSanction`, `CaseAppearance` — all in `agency.py`.
+- **AI knowledge tables/models — ALREADY EXIST**:
+  - Migration: [`src/quick_chat_api/migrations/agency/versions/2026_09_06_041701-9e9d5258d192_add_initial_vector_embedding_table_.py`](src/quick_chat_api/migrations/agency/versions/2026_09_06_041701-9e9d5258d192_add_initial_vector_embedding_table_.py)
+  - Models: `AIKnowledgeSource` (line 678) and `AIKnowledgeChunk` (line 729) in `agency.py`
+  - `EMBEDDING_DIM = 768` constant at `agency.py:47`
+  - Index is **diskann** (`vectorscale` extension), not HNSW as originally specced — pgvectorscale's diskann was chosen over pgvector's native HNSW. Treat diskann as the current decision; changing it is a model/migration change requiring approval.
+  - `CREATE EXTENSION IF NOT EXISTS vectorscale CASCADE` already run in the migration (also creates base `vector` extension).
+- **Embedding provider integration**: does **not** exist yet. No `EmbeddingProvider` abstraction, no LangChain/LangGraph, no Qdrant (project uses pgvector only — no separate vector store).
+- **Settings**: [`src/quick_chat_api/settings/config.py`](src/quick_chat_api/settings/config.py) has DB + AWS S3 config only. No LLM/embedding provider keys yet — must be added (new dependency requires approval per `CLAUDE.md` §5).
+- **Object storage**: `AWS_S3_BUCKET` exists in settings — reuse this for any raw file storage (PDFs/DOCX/etc.), do not invent a new storage mechanism.
+- **Background/task queue infra**: none found yet. Embedding calls will need to run out-of-band (script/CLI or async task) — no Celery/RQ/etc. present.
+- **Ingestion pipeline**: [`data_ingestion/`](data_ingestion) — `ingest_data.py`, `db.py`, `create_tables.py`, `add_uuid7_ids.py`. This is a standalone script-based pipeline (not part of the FastAPI app modules), currently used to load `data_ingestion/data/batch_1.json` into Postgres. This is where case data already landed — the embedding backfill needs to run against what this produced.
+- **App layers**: `src/quick_chat_api/modules/`, `core/controllers/`, `routers/` exist as directories but currently have no embedding/retrieval-related files.
 
-OBJECTIVE
+**Conclusion**: Schema/model layer for Phase 1 is done. Everything from projection → embedding → retrieval is unbuilt.
 
-Build a unified retrieval/indexing system that can ingest:
+---
 
-1. Structured PostgreSQL records
-2. Related records/entities
-3. PDFs
-4. DOCX files
-5. TXT files
-6. Images where OCR is supported
-7. Other case attachments/files
+## 1. Objective
 
-All sources must normalize into a common knowledge document + chunk representation.
+Build a unified retrieval/indexing system ingesting:
+1. Structured PostgreSQL records (case data already ingested via `data_ingestion/`)
+2. Related records/entities (parties, charges, dispositions, sanctions, appearances, payments)
+3. PDFs / DOCX / TXT / images (OCR) — future case attachments
 
-ARCHITECTURE
+All sources normalize into the common `ai_knowledge_source` (document) + `ai_knowledge_chunk` (retrievable unit + embedding) representation. No per-entity vector tables.
 
-Create:
+---
 
-ai_knowledge_sources
-ai_knowledge_chunk
+## 2. Schema — `[x]` DONE, already migrated
 
-ai_knowledge_source represents one logical source/document.
+`ai_knowledge_source` and `ai_knowledge_chunk` exist with the fields, indexes, and constraints originally specced (UUID PK, `case_record_id` FK w/ CASCADE, `source_metadata`/`metadata` JSONB with GIN index, `content_hash`, `status`, optimistic-lock versioning columns, unique constraint on `(source_table, source_id, source_type)` for dedupe, unique `(document_id, chunk_index)`).
 
-ai_knowledge_chunk represents the retrievable semantic units and contains pgvector embeddings.
+Remaining schema-level gaps to confirm before building on top:
+- [ ] `status` currently free-text (`Text`, default `"pending"`) — confirm the intended enum values (`PENDING/PROCESSING/COMPLETED/FAILED/DELETED/SUPERSEDED` per §"Error Handling" below) are enforced at the application layer since there's no DB-level check constraint.
+- [ ] No explicit `embedding_version`/`projection_version`/`chunking_version`/`parser_version` split — currently only `embedding_model` + `embedding_version` text columns exist on `ai_knowledge_chunk`. Projection/chunking/parser versioning will need to live in `metadata` JSONB unless a model change is approved to add dedicated columns.
 
-Do not create separate vector tables per business entity.
+---
 
-SCHEMA
+## 3. Design Principles (carry forward, unchanged)
 
-ai_knowledge_sources:
-
-- id UUID primary key
-- case_record_id nullable
-- source_type
-- source_table nullable
-- source_id nullable
-- external_id nullable
-- title nullable
-- mime_type nullable
-- storage_uri nullable
-- content_hash nullable
-- source_metadata JSONB
-- status
-- created_on
-- created_by
-- modified_on
-- modified_by
-- modification_version
-
-Add suitable indexes and uniqueness constraints.
-
-ai_knowledge_chunks:
-
-- id UUID primary key
-- document_id FK
-- case_record_id nullable
-- chunk_index
-- content
-- content_hash
-- token_count nullable
-- embedding VECTOR(N)
-- embedding_model
-- embedding_version
-- metadata JSONB
-- created_on
-- created_by
-- modified_on
-- modified_by
-- modification_version
-
-N must be configurable and must match the configured embedding model.
-
-Add HNSW cosine similarity index.
-
-Add B-tree indexes for:
-
-- case_record_id
-- document_id
-- source identifiers
-- tenant/agency identifier if required by the existing AgencyBase architecture
-
-FIRST inspect the existing AgencyBase and tenant/agency model before defining these columns.
-
-IMPORTANT DESIGN PRINCIPLES
-
-1. Existing business tables remain the system of record.
+1. Existing business tables remain the system of record — never modify files under `core/models/` without explicit approval.
 2. AI knowledge tables are derived/indexed data.
-3. The ingestion pipeline must be idempotent.
-4. Never re-embed unchanged content.
-5. Use SHA256 content hashes.
-6. Store embedding model/version.
-7. Store chunking version.
-8. Store projection version.
-9. Support incremental re-indexing.
-10. Support deletes/superseded documents.
-11. Preserve source identity and lineage.
-12. Do not embed sensitive fields such as SSNs, payment card details, or similarly sensitive identifiers unless explicitly required.
-13. Prefer metadata filtering over putting identifiers solely into embeddings.
-14. Never rely on vector similarity for tenant isolation.
-15. Do not hold SQL transactions open while calling external embedding APIs.
+3. Ingestion pipeline must be idempotent — skip re-embedding via `content_hash` comparison.
+4. Use SHA-256 content hashes.
+5. Store embedding model/version, and (in metadata, per §2) chunking/projection version.
+6. Support incremental re-indexing and deletes/supersession via `status`.
+7. Preserve source identity/lineage (`source_table`, `source_id`, `external_id`).
+8. Never embed sensitive fields (SSNs, payment card numbers, etc.) unless explicitly required — check `PartyDetail`/`PaymentRecord` fields before writing projectors.
+9. Prefer metadata filtering (`source_metadata`/`metadata` JSONB + B-tree indexes) over relying on embeddings to carry identifiers.
+10. Never rely on vector similarity for tenant isolation — isolation is schema-based via `session_context()`, enforced before any query runs.
+11. Do not hold SQL transactions open while calling external embedding APIs (see §9, Async/DB Safety).
 
-SEMANTIC PROJECTION LAYER
+---
 
-Do not directly serialize SQLAlchemy models into embeddings.
+## 4. Semantic Projection Layer — `[ ]` NOT STARTED
 
-Implement semantic projectors:
+Do not directly serialize SQLAlchemy models into embeddings. Build projectors (proposed location: `src/quick_chat_api/modules/embedding/projectors/`, one file per entity or a shared module — decide based on projector complexity):
 
-- CaseRecordProjector
-- PartyProjector
-- AddressProjector
-- ChargeProjector
-- AppearanceProjector
-- DispositionProjector
-- SanctionProjector
-- PaymentProjector
-- CriminalProjector
-- VehicleProjector
-- DocumentProjector
+- `CaseRecordProjector` — Case Number, Case Type, Case Status, Case Title, Incident Date/Location, Issuer, Hearing info, `additional_notes`. Omit internal IDs/DB details.
+- `PartyProjector`, `AddressProjector`, `ChargeProjector`, `AppearanceProjector`, `DispositionProjector`, `SanctionProjector`, `PaymentProjector`, `CriminalProjector`, `VehicleProjector` — one per model in `agency.py`.
+- `DocumentProjector` — for future file-based sources (§7).
 
-A projector converts a business object into a normalized semantic representation.
+**Relationship-aware requirement**: a `ChargeProjector` should carry case context (and disposition/sanction context where relevant, via `CaseCharge.case_record` / joined data already modeled in `agency.py`). An `AppearanceProjector` should include case, hearing type/date/time, result, notes, status, legal representative — using the existing `CaseAppearance` relationship fields, not a bare dump.
 
-Example:
+Also build a **composite case summary document** (whole-case natural-language rollup spanning `CaseRecord` + its relationships) for high-level retrieval — this is the single highest-value first target given data is already ingested.
 
-CaseRecordProjector should produce natural-language structured content containing useful semantic fields:
+---
 
-Case Number
-Case Type
-Case Status
-Case Title
-Incident Date
-Incident Location
-Issuer
-Hearing information
-Additional Notes
+## 5. Database Source Adapters — `[ ]` NOT STARTED
 
-It should not dump internal IDs or irrelevant DB implementation details.
+Proposed location: `src/quick_chat_api/modules/embedding/db_adapters.py` (or one per entity if it grows large).
 
-RELATIONSHIP-AWARE REPRESENTATIONS
+Each adapter: discover records → eager-load relationships (`selectinload`/`joinedload`, avoid N+1) → run through projector → compute SHA-256 `content_hash` → skip if unchanged → chunk if needed → hand off to embedding step → bulk upsert `AIKnowledgeChunk` rows.
 
-The system must preserve relational context.
+Keep DB loading (read transaction) separate from the embedding API call — see §9.
 
-Do not embed each entity as an isolated record only.
+---
 
-For example, a charge should be projected with relevant case context and, where appropriate, disposition and sanction context.
+## 6. File Source Adapters — `[ ]` NOT STARTED (Phase 4, later)
 
-A hearing/appearance should contain:
+Common interface: `KnowledgeSource` → `NormalizedDocument`. Support PDF, DOCX, TXT, image/OCR.
 
-- case
-- hearing type
-- hearing date/time when available
-- result
-- hearing notes
-- status
-- legal representative when appropriate
+Flow: `file → parser → normalized document → content cleaning → metadata enrichment → chunking → embedding → knowledge_chunk`.
 
-Build composite case summary documents for high-level retrieval.
+- Raw binaries go to **S3** (`AWS_S3_BUCKET`, already configured in `settings/config.py`) — never store file bytes in Postgres. `ai_knowledge_source.storage_uri` holds the S3 key/URI.
+- For PDFs, retain page number / section metadata in chunk `metadata` JSONB for provenance.
+- Parser library choices (PDF/DOCX/OCR) are new dependencies — require approval per `CLAUDE.md` §5 when this phase starts.
 
-DATABASE SOURCE ADAPTERS
+---
 
-Implement source adapters for structured records.
+## 7. Chunking — `[ ]` NOT STARTED
 
-Each adapter should:
+Proposed location: `src/quick_chat_api/modules/embedding/chunking.py`.
 
-- discover records
-- load required relationships efficiently
-- create/update knowledge documents
-- generate semantic content
-- calculate content hash
-- chunk content if needed
-- generate embeddings
-- bulk upsert chunks
+- Structured entities: generally one logical chunk per semantic unit (a case summary, a charge-with-context, an appearance-with-context) — chunking mainly matters when a projected document exceeds the embedding model's token limit.
+- Large files (Phase 4): token-aware chunking, configurable size/overlap, preserve page/section metadata.
+- Make chunk size/overlap configurable via `Settings`; version the chunking strategy (store in chunk `metadata`, per §2 gap).
 
-Avoid N+1 queries.
+---
 
-Use SQLAlchemy eager loading/selectinload/joinedload where appropriate.
+## 8. Embedding Service — `[ ]` NOT STARTED
 
-Keep DB loading separate from embedding calls.
+Proposed location: `src/quick_chat_api/core/llm/embedding_provider.py` (new `core/llm/` package — mirrors how `core/database/` isolates DB infra).
 
-FILE SOURCE ADAPTERS
+- Define an `EmbeddingProvider` interface: `embed_documents(texts: list[str]) -> list[list[float]]`, `embed_query(text: str) -> list[float]`.
+- Implement the first concrete provider only after the provider/model is chosen and approved (see `CHECKPOINT.md` open decisions). Confirm output dimension matches `EMBEDDING_DIM = 768` in `agency.py:47`, or get approval for a migration if a different model is chosen.
+- Batch embedding calls — never one API call per chunk.
+- New settings needed in `Settings` (`config.py`): `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_API_KEY`, `EMBEDDING_BATCH_SIZE`.
+- New SDK dependency requires explicit approval before adding.
 
-Implement a common interface:
+---
 
-KnowledgeSource
-NormalizedDocument
+## 9. Async / Database Safety — `[ ]` NOT STARTED (design rule to enforce during implementation)
 
-Support:
+Sequence for every ingestion unit:
+```
+DB read transaction (session_context, tenant-scoped)
+  → load + project
+  → commit/close session
+  → call embedding API (no open transaction)
+  → open new DB transaction
+  → bulk upsert AIKnowledgeSource/AIKnowledgeChunk
+  → commit
+```
+Never hold a transaction open across an external HTTP call.
 
-- PDF
-- DOCX
-- TXT
-- image/OCR when available
+---
 
-Normalize all extracted data into the same pipeline as DB content.
+## 10. Vector Storage & Retrieval — `[ ]` NOT STARTED
 
-The file ingestion flow should be:
+- Storage: pgvector via SQLAlchemy (already wired in the model), diskann index already migrated (§2), cosine distance ops.
+- Retrieval must combine, per `.claude/rules/rag.md`:
+  1. Exact/entity retrieval (case number, party name) via structured SQL on existing models.
+  2. Semantic vector retrieval scoped by tenant schema + `case_record_id`/`source_types` filters — never a global unscoped vector search.
+  3. Relational expansion (e.g., pull related charges/dispositions once a case is resolved).
+  4. Optional reranking (later phase).
+  5. Context building — dedupe, rank, respect token limits, preserve source metadata for traceability.
 
-file
-→ parser
-→ normalized document
-→ content cleaning
-→ metadata enrichment
-→ chunking
-→ embedding
-→ knowledge_chunk
-
-For PDFs retain page number and useful section metadata so retrieval can provide source provenance.
-
-FILE STORAGE
-
-Do not store the raw file inside PostgreSQL.
-
-Keep binary files in the existing object storage system and store storage URI/key metadata in ai_knowledge_source.
-
-CHUNKING
-
-Use different strategies for structured records and large documents.
-
-Structured entities:
-
-- generally one logical entity per semantic unit
-
-Large files:
-
-- token-aware chunking
-- configurable chunk size
-- configurable overlap
-- preserve page/section metadata
-
-Make chunking configurable and versioned.
-
-EMBEDDING SERVICE
-
-Create:
-
-EmbeddingProvider
-
-with:
-
-embed_documents(...)
-embed_query(...)
-
-Do not couple the pipeline directly to one vendor.
-
-Implement the existing application's preferred provider first.
-
-Batch document embeddings.
-
-Never make one external API call per chunk when batching is possible.
-
-VECTOR STORAGE
-
-Use pgvector through the official SQLAlchemy integration.
-
-Use cosine distance by default.
-
-Create the required HNSW index.
-
-Use metadata filters and B-tree indexes appropriately.
-
-RETRIEVAL
-
-Implement:
-
-1. Exact/entity retrieval
-2. Semantic vector retrieval
-3. Relational expansion
-4. Optional reranking
-5. Context building
-
-Do not implement vector-only RAG.
-
-For example:
-
-Query:
-"What happened at John's hearing in case CE-123?"
-
-The system should:
-
-1. Resolve case number CE-123 exactly.
-2. Resolve party/entity John.
-3. Retrieve hearing/appearance records.
-4. Perform semantic retrieval over hearing notes/documents.
-5. Expand related entities.
-6. Build grounded context.
-7. Return ranked sources.
-
-RETRIEVAL API
-
-Create a service similar to:
-
-retrieve(
+Proposed retrieval service signature (location: `src/quick_chat_api/modules/embedding/retrieval.py`):
+```python
+async def retrieve(
+    session: AsyncSession,
     query: str,
-    case_record_id: int | None = None,
-    tenant_id: str | None = None,
+    case_record_id: UUID | None = None,
     source_types: list[str] | None = None,
     top_k: int = 20,
-)
+) -> list[RetrievedChunk]: ...
+```
+Return chunk content, similarity score, source metadata, case metadata, document metadata — tenant scoping is implicit via the session's `session_context()`, never a parameter that could be bypassed.
 
-Return:
+Then a **context builder** (filter → dedupe → rank → respect token limits) converts results into structured LLM context — per `CLAUDE.md` §14.
 
-- chunk
-- similarity
-- source metadata
-- case metadata
-- document metadata
+---
 
-Then implement a context builder that converts results into structured LLM context.
+## 11. Ingestion Service Entry Points — `[ ]` NOT STARTED
 
-INGESTION
+Proposed location: `src/quick_chat_api/modules/embedding/ingestion_service.py`.
 
-Implement:
-
+```
 ingest_case(case_id)
-
-and:
-
 ingest_document(document_id)
-
-also provide:
-
 reindex_case(case_id)
 reindex_document(document_id)
 delete_case_index(case_id)
+```
 
-The pipeline must be idempotent.
+Idempotent: skip re-embedding when `content_hash` + `embedding_model` + projection/chunking version are unchanged.
 
-If content_hash + embedding_model + projection_version + chunking_version have not changed, skip re-embedding.
+---
 
-VERSIONING
+## 12. Error Handling — `[ ]` NOT STARTED
 
-Store:
+One bad document/entity must not abort a whole case's ingestion. Use `ai_knowledge_source.status` values: `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`, `DELETED`, `SUPERSEDED`. Store error detail in `source_metadata` JSONB (do not log full content — `CLAUDE.md` §20).
 
-embedding_model
-embedding_version
-projection_version
-chunking_version
-parser_version
+---
 
-in metadata/database fields.
+## 13. Observability — `[ ]` NOT STARTED
 
-Allow re-indexing by version.
+Log per `CLAUDE.md` §26/§20 (safe metadata only, no content/prompts): ingestion id, case id, document id, source type, chunk count, embedding model, embedding latency, parsing latency, failures/retries.
 
-OBSERVABILITY
+---
 
-Log/trace:
+## 14. Tests — `[ ]` NOT STARTED
 
-- ingestion ID
-- case ID
-- document ID
-- source type
-- number of chunks
-- embedding model
-- embedding latency
-- parsing latency
-- failures
-- retry attempts
+- Unit: projectors, hashing, chunking, idempotency skip logic, embedding provider (mocked), metadata generation.
+- Integration: pgvector insert, similarity search, filtered/tenant-scoped search, case-level retrieval, deletion/supersession, reindexing.
+- Retrieval eval fixture: example queries + expected source records (see `.claude/rules/rag.md` "important scenarios": correct case retrieval, irrelevant query, missing info, similar party names, cross-tenant isolation, empty vector results, conflicting records).
 
-Add metrics where the application's existing observability stack supports them.
+---
 
-ERROR HANDLING
+## 15. Migration / Rollout Order
 
-One bad document must not abort a complete case ingestion.
+```
+Phase 1: pgvector + knowledge tables                         [x] DONE
+Phase 2: CaseRecord + PartyDetail + CaseCharge + CaseAppearance projection+embedding   [ ] NOT STARTED  ← current focus
+Phase 3: related entities (Criminal, VehicleDetail, AddressDetail,
+         PaymentRecord, ImposedDisposition, ImposedSanction)  [ ] NOT STARTED
+Phase 4: PDF/DOCX/attachments (file adapters + S3)            [ ] NOT STARTED
+Phase 5: hybrid retrieval (structured + vector combined)      [ ] NOT STARTED
+Phase 6: reranking / evaluation harness                       [ ] NOT STARTED
+Phase 7: incremental / event-driven ingestion                 [ ] NOT STARTED
+```
 
-Use document-level failure states:
+Do not jump ahead — Phase 2 must be working and validated (retrieval quality checked) before Phase 3 content is added, per `CLAUDE.md` §12.
 
-PENDING
-PROCESSING
-COMPLETED
-FAILED
-DELETED
-SUPERSEDED
+---
 
-Store error information for failures.
+## 16. Deliverables Checklist
 
-ASYNC/DATABASE SAFETY
+- [x] Alembic migration (knowledge tables + vectorscale extension)
+- [x] SQLAlchemy models (`AIKnowledgeSource`, `AIKnowledgeChunk`)
+- [ ] Semantic projector framework
+- [ ] DB source adapters
+- [ ] File parsers/adapters (Phase 4)
+- [ ] Chunking module
+- [ ] Embedding provider abstraction
+- [ ] Ingestion service
+- [ ] Retrieval service
+- [ ] Context builder
+- [ ] Tests (unit + integration + retrieval eval fixture)
+- [ ] CLI/script to backfill already-ingested cases (`data_ingestion/data/batch_1.json` data)
+- [ ] Configuration/env variables (`Settings` additions)
+- [ ] Documentation
+- [ ] Sample retrieval queries
 
-The application uses SQLAlchemy async.
-
-Do not keep DB transactions open during external embedding requests.
-
-Use:
-
-DB read transaction
-→ projection
-→ commit/close
-→ embedding API
-→ new DB transaction
-→ bulk upsert
-
-MIGRATIONS
-
-Create proper Alembic migrations.
-
-Do not manually modify production schema.
-
-Include:
-
-- CREATE EXTENSION vector
-- knowledge tables
-- indexes
-- constraints
-
-TESTS
-
-Create unit tests for:
-
-- semantic projection
-- relationship context construction
-- hashing
-- chunking
-- idempotency
-- embedding provider
-- metadata generation
-
-Create integration tests for:
-
-- pgvector insertion
-- vector similarity search
-- filtered search
-- case-level retrieval
-- document retrieval
-- deletion/supersession
-- reindexing
-
-Add a retrieval evaluation fixture with example queries and expected source records.
-
-PERFORMANCE
-
-Avoid:
-
-- N+1 relationship queries
-- one embedding request per chunk
-- one DB insert per chunk
-- global vector search when case/tenant filters are known
-
-Use bulk inserts/upserts and eager loading.
-
-REUSE EXISTING SYSTEMS
-
-Before implementing anything:
-
-1. Inspect existing Qdrant/vector-store code.
-2. Inspect current document/attachment models.
-3. Inspect S3/object-storage helpers.
-4. Inspect embedding provider configuration.
-5. Inspect existing LangChain/LangGraph integration.
-6. Inspect AgencyBase and tenant isolation.
-7. Inspect task queue/background processing infrastructure.
-8. Inspect Alembic setup.
-
-Reuse existing parsers, embedding providers, metadata conventions and tracing where practical.
-
-DO NOT rewrite existing application architecture unnecessarily.
-
-MIGRATION STRATEGY
-
-Do not immediately embed the entire database.
-
-Implement in this order:
-
-Phase 1:
-pgvector + knowledge tables
-
-Phase 2:
-CaseRecord + PartyDetail + CaseCharge + CaseAppearance
-
-Phase 3:
-related entities
-
-Phase 4:
-PDF/DOCX/attachments
-
-Phase 5:
-hybrid retrieval
-
-Phase 6:
-reranking/evaluation
-
-Phase 7:
-incremental/event-driven ingestion
-
-DELIVERABLES
-
-Produce:
-
-1. Alembic migrations
-2. SQLAlchemy models
-3. semantic projector framework
-4. DB source adapters
-5. file parsers/adapters
-6. chunking module
-7. embedding provider abstraction
-8. ingestion service
-9. retrieval service
-10. context builder
-11. tests
-12. CLI/scripts to backfill cases/documents
-13. configuration/env variables
-14. documentation
-15. sample retrieval queries
-
-IMPORTANT
-
-Before writing code, inspect the existing repository and identify the actual locations of:
-
-- SQLAlchemy models
-- AsyncSession setup
-- AgencyBase
-- file/document models
-- S3 helpers
-- existing Qdrant integration
-- existing embedding integration
-- existing LangGraph/RAG code
-- Alembic setup
-- background task processing
-
-Then provide an implementation plan referencing actual repository paths.
-
-Do not invent existing files or APIs.
-
-Implement in small commits/steps and preserve backward compatibility with the existing application.
+See `CHECKPOINT.md` for the live status log, open decisions, and the next concrete action.

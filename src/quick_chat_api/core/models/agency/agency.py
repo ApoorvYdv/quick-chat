@@ -44,7 +44,7 @@ from quick_chat_api.core.constants.constants import (
 )
 from quick_chat_api.core.models import Base
 
-EMBEDDING_DIM = 1536  # match your embedding model; centralize as a constant
+EMBEDDING_DIM = 768  # match your embedding model; centralize as a constant
 
 
 class AgencyBase(Base):

@@ -138,6 +138,13 @@ Modules should not depend on FastAPI request/response objects.
 
 # 4. Coding Standards
 
+For any subsystem that has, or will have, multiple interchangeable
+implementations (embedding providers, LLM providers, projectors, chunkers,
+retrievers, parsers), follow the Interface + Registry + Factory pattern
+documented in `.claude/rules/coding-patterns.md`, using
+`src/quick_chat_api/core/llm/embedding/` as the reference implementation.
+Do not invent an ad-hoc `if/elif` provider-selection mechanism.
+
 Use Python 3.12 features where they improve clarity.
 
 Use type hints consistently.

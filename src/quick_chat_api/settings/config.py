@@ -23,6 +23,32 @@ class Settings(BaseSettings):
     # AWS S3
     AWS_S3_BUCKET: str = Field(description="AWS S3 bucket name")
 
+    # Embeddings
+    EMBEDDING_PROVIDER: str = Field(
+        default="local",
+        description="Embedding provider to use: 'local' (sentence-transformers) or 'openai'",
+    )
+    EMBEDDING_MODEL: str = Field(
+        default="sentence-transformers/all-mpnet-base-v2",
+        description="Embedding model identifier for the selected provider",
+    )
+    EMBEDDING_DIM: int = Field(
+        default=768,
+        description="Output dimensionality of the configured embedding model; "
+        "must match the pgvector column width in ai_knowledge_chunk",
+        gt=0,
+    )
+    EMBEDDING_BATCH_SIZE: int = Field(
+        default=32, description="Number of texts embedded per batch call", ge=1
+    )
+    EMBEDDING_DEVICE: str = Field(
+        default="cpu",
+        description="Device for local embedding inference: 'cpu', 'mps', or 'cuda'",
+    )
+    EMBEDDING_API_KEY: str | None = Field(
+        default=None, description="API key for a remote embedding provider (if any)"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -117,7 +117,7 @@ def upgrade() -> None:
         sa.Column("content", sa.Text(), nullable=False),
         sa.Column("content_hash", sa.Text(), nullable=False),
         sa.Column("token_count", sa.Integer(), nullable=True),
-        sa.Column("embedding", Vector(1536), nullable=False),
+        sa.Column("embedding", Vector(768), nullable=False),
         sa.Column("embedding_model", sa.Text(), nullable=False),
         sa.Column("embedding_version", sa.Text(), nullable=False),
         sa.Column("metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
