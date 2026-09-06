@@ -66,17 +66,27 @@ Remaining schema-level gaps to confirm before building on top:
 
 ---
 
-## 4. Semantic Projection Layer — `[ ]` NOT STARTED
+## 4. Semantic Projection Layer — `[x]` DONE for Phase 2 entities
 
-Do not directly serialize SQLAlchemy models into embeddings. Build projectors (proposed location: `src/quick_chat_api/modules/embedding/projectors/`, one file per entity or a shared module — decide based on projector complexity):
+Built at `src/quick_chat_api/modules/embedding/projectors/`, following the Interface + Registry + Factory pattern from `.claude/rules/coding-patterns.md` (mirrors `core/llm/embedding/`):
 
-- `CaseRecordProjector` — Case Number, Case Type, Case Status, Case Title, Incident Date/Location, Issuer, Hearing info, `additional_notes`. Omit internal IDs/DB details.
-- `PartyProjector`, `AddressProjector`, `ChargeProjector`, `AppearanceProjector`, `DispositionProjector`, `SanctionProjector`, `PaymentProjector`, `CriminalProjector`, `VehicleProjector` — one per model in `agency.py`.
-- `DocumentProjector` — for future file-based sources (§7).
+- `base.py` — `Projector[EntityT]` ABC (`project(entity) -> ProjectedDocument`) + `ProjectedDocument` (content, title, metadata).
+- `exceptions.py` — `ProjectorError`, `UnknownProjectorError`.
+- `registry.py` / `factory.py` — `register_projector(source_type)`, `get_projector(source_type)` (`lru_cache`d).
+- `_formatting.py` — shared `field_line`/`join_lines` helpers used by every provider.
+- `providers/case.py` — `CaseRecordProjector` (`source_type="case"`) — Case Number, Case Type, Case Status, Case Title, Incident Date/Location, Issuer, Hearing info, `additional_notes`. Omits internal IDs/DB details.
+- `providers/party.py` — `PartyProjector` (`source_type="party"`) — excludes `ssn_id` and `license_number` (see Open Decision #4 resolution below); everything else on `PartyDetail` is projected.
+- `providers/charge.py` — `ChargeProjector` (`source_type="charge"`) — relationship-aware: case context via `charge.case_record`, plus `imposed_disposition`/`imposed_sanctions` when eager-loaded.
+- `providers/appearance.py` — `AppearanceProjector` (`source_type="appearance"`) — relationship-aware: case context, `legal_representative.full_name` when eager-loaded.
+- `providers/case_summary.py` — `CaseSummaryProjector` (`source_type="case_summary"`) — the composite whole-case rollup, composing the four projectors above over `CaseRecord.parties`/`.charges`/`.appearance_history`, plus a non-sensitive payment aggregate (total/currency/count — never per-payment card fields).
 
-**Relationship-aware requirement**: a `ChargeProjector` should carry case context (and disposition/sanction context where relevant, via `CaseCharge.case_record` / joined data already modeled in `agency.py`). An `AppearanceProjector` should include case, hearing type/date/time, result, notes, status, legal representative — using the existing `CaseAppearance` relationship fields, not a bare dump.
+Source types are the `AIKnowledgeSourceType` enum in `core/constants/constants.py` (`case`, `case_summary`, `party`, `charge`, `appearance`) — also the registry keys.
 
-Also build a **composite case summary document** (whole-case natural-language rollup spanning `CaseRecord` + its relationships) for high-level retrieval — this is the single highest-value first target given data is already ingested.
+**Not yet built (later phases, per §15):** `AddressProjector`, `DispositionProjector`/`SanctionProjector`/`PaymentProjector` as standalone projectors (Phase 3), `CriminalProjector`/`VehicleProjector` (Phase 3), `DocumentProjector` (Phase 4).
+
+**Relationship-loading precondition:** every relationship-aware projector guards with `"relation" in entity.__dict__` before touching it, so passing an entity where the DB adapter (§5, not yet built) did not eager-load a relationship silently omits that section rather than triggering a lazy-load/`MissingGreenlet` error in an async context. Adapters must still eager-load deliberately for correctness (an omitted section is not the same as "nothing to say").
+
+Unit tests: `tests/modules/embedding/projectors/test_projectors.py` — PII exclusion, relationship-present/absent branches, registry unknown-key error, factory caching, case-summary composition, payment aggregation (voided payments excluded, no card fields ever appear).
 
 ---
 
@@ -223,7 +233,7 @@ Do not jump ahead — Phase 2 must be working and validated (retrieval quality c
 
 - [x] Alembic migration (knowledge tables + vectorscale extension)
 - [x] SQLAlchemy models (`AIKnowledgeSource`, `AIKnowledgeChunk`)
-- [ ] Semantic projector framework
+- [x] Semantic projector framework (Phase 2 entities: case, party, charge, appearance, case_summary)
 - [ ] DB source adapters
 - [ ] File parsers/adapters (Phase 4)
 - [ ] Chunking module

@@ -4,6 +4,33 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 
 ---
 
+## 2026-09-06 — Session: semantic projection layer (Phase 2, PLAN.md §4)
+
+**Done this session:**
+- Built the full projector subsystem at `src/quick_chat_api/modules/embedding/projectors/`, following the Interface + Registry + Factory pattern (`base.py`, `exceptions.py`, `registry.py`, `factory.py`, `_formatting.py` shared helper, `providers/`).
+- Implemented 5 projectors covering all of Phase 2: `CaseRecordProjector` (`case`), `PartyProjector` (`party`), `ChargeProjector` (`charge`, relationship-aware — case + disposition/sanction context), `AppearanceProjector` (`appearance`, relationship-aware — case + legal representative), `CaseSummaryProjector` (`case_summary`, composite whole-case rollup that composes the other four rather than duplicating field lists).
+- Added `AIKnowledgeSourceType` `StrEnum` to `core/constants/constants.py` (`case`, `case_summary`, `party`, `charge`, `appearance`) — doubles as the projector registry keys and the intended `ai_knowledge_source.source_type` values.
+- Added `src/quick_chat_api/modules/__init__.py` and `.../embedding/__init__.py` (the `modules/` package tree was empty before this).
+- Added `tests/modules/embedding/projectors/test_projectors.py` (14 tests) — PII exclusion, relationship-present/absent branches, unknown-`source_type` registry error, factory caching, case-summary composition, payment aggregation excluding voided payments and never surfacing card fields.
+- Added `pytest` + `pytest-xdist` as dev dependencies — the project had `[tool.pytest.ini_options]` configured but no pytest actually installed, so no test in this repo could run before this. All 14 new tests pass (`uv run pytest tests/modules/embedding/projectors`).
+
+**Decisions made:**
+- Open Decision #4 (PII exclusion list) resolved for `PartyDetail`: `ssn_id` and `license_number` are never projected into embeddable text. Everything else on `PartyDetail` (dob, phone, email, physical descriptors, license type/state) is projected — user's explicit call, not just the "obvious" exclusions.
+- Open Decision #3 (initial `source_type` set) resolved: `case`, `case_summary`, `party`, `charge`, `appearance` for Phase 2. `AddressProjector`/`PaymentProjector`/`DispositionProjector`/`SanctionProjector`/`CriminalProjector`/`VehicleProjector` deferred to Phase 3 per `PLAN.md` §15 (not built this session — scope was Phase 2 only).
+- Projectors follow the same Interface + Registry + Factory shape as `core/llm/embedding/`, per `.claude/rules/coding-patterns.md` explicitly naming projectors as a pluggable subsystem — user chose this over a simpler shared-module approach.
+- Relationship-aware projectors (`charge`, `appearance`, `case_summary`) guard every relationship access with `"relation" in entity.__dict__` and degrade to omitting that section rather than raising — since DB source adapters (§5) don't exist yet and this is the only safe way to unit-test/exercise these projectors against transient (non-session-attached) entities today.
+- Payment data in `CaseSummaryProjector` is aggregated (total/currency/count) only — never per-payment card fields (`card_last_4`, `card_brand`, etc.), per `CLAUDE.md` §13/§20.
+
+**New open questions:**
+- None new. Open Decisions #1 (prod embedding provider/model) and #2 (new SDK dependency for it) remain open from the prior session.
+
+**Next concrete action:**
+- Build the DB source adapters (`PLAN.md` §5, `src/quick_chat_api/modules/embedding/db_adapters.py`) that eager-load each entity's relationships and hand it to the matching projector via `get_projector(source_type)` — this is what actually exercises the relationship-aware branches in `charge.py`/`appearance.py`/`case_summary.py` against real, session-attached data instead of transient test objects.
+- Then chunking (§7 — likely a no-op passthrough for Phase 2 since these are single logical chunks per entity, unless a projected `case_summary` exceeds the embedding model's token limit) and the minimal `ingest_case()` path (§11) using `get_embedding_provider()` + `get_projector()` together.
+- Do not start Phase 3 entities or retrieval (§10) until `ingest_case()` is validated end-to-end against real ingested data, per `CLAUDE.md` §12.
+
+---
+
 ## 2026-09-06 — Session: local embedding provider (Open Decisions #1/#2, partial)
 
 **Done this session:**
@@ -50,23 +77,21 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 1. **Embedding provider/model** — not chosen yet. Whatever is chosen must output 1536-dim vectors to match the already-migrated `EMBEDDING_DIM`, OR a migration change must be explicitly approved to alter it (this touches `core/models/`, which needs explicit user approval per `CLAUDE.md` §7).
    - Candidates to evaluate: OpenAI `text-embedding-3-small` (1536-dim, matches as-is), Voyage AI (legal/case-domain-tuned options exist), Cohere embed-v3. Needs a pricing/latency/quality tradeoff discussion before picking.
 2. **New dependency approval** — an SDK client for whichever provider is chosen (e.g. `openai`), plus possibly a tokenizer (e.g. `tiktoken`) for token-aware chunking. Per `CLAUDE.md` §5, must ask before adding.
-3. **What counts as a "document" per case** — decide the initial `source_type` set for Phase 2 (proposal: `"case_summary"` as a first synthesized document type covering the whole case, before doing per-entity chunks for parties/charges/appearances).
-4. **Sensitive field exclusion list** — before writing `PartyProjector` / `PaymentProjector`, explicitly enumerate which fields must never be embedded (SSNs, payment card numbers, similar identifiers) per `PLAN.md` §3 rule 8. Not yet audited against the actual `PartyDetail`/`PaymentRecord`/`AddressDetail` columns.
+3. ~~**What counts as a "document" per case**~~ — **RESOLVED** 2026-09-06: `AIKnowledgeSourceType` = `case`, `case_summary`, `party`, `charge`, `appearance` for Phase 2 (`core/constants/constants.py`).
+4. ~~**Sensitive field exclusion list**~~ — **RESOLVED** 2026-09-06 for `PartyDetail`: exclude `ssn_id` and `license_number` only; dob/phone/email/physical descriptors/license type+state are projected. `PaymentRecord`/`AddressDetail` exclusion lists still undecided — not needed until their Phase 3 projectors are built (`CaseSummaryProjector`'s payment section already aggregates rather than projecting raw `PaymentRecord` fields, so no card data leaks today).
 5. **Status enum enforcement** — `ai_knowledge_source.status` is a free-text column with no DB check constraint. Decide whether to enforce the `PENDING/PROCESSING/COMPLETED/FAILED/DELETED/SUPERSEDED` set purely at the application layer (e.g. a Python `StrEnum` + validation in the module) or request a migration to add a check constraint.
 
 ---
 
 ## Next Concrete Action (start here next session)
 
-1. Resolve **Open Decision #1 and #2** (provider + dependency approval) with the user — this blocks everything else.
-2. Once approved, add `EMBEDDING_PROVIDER` / `EMBEDDING_MODEL` / `EMBEDDING_API_KEY` / `EMBEDDING_BATCH_SIZE` to `Settings` (`src/quick_chat_api/settings/config.py`).
-3. Build `CaseRecordProjector` first (highest value, per `PLAN.md` §4) — a natural-language rollup of one `CaseRecord` (+ eagerly-loaded relationships) into a single text document.
-4. Build the `EmbeddingProvider` abstraction + first concrete implementation (`src/quick_chat_api/core/llm/embedding_provider.py`).
-5. Build the minimal ingestion path for one entity type (`ingest_case(case_id)`) end-to-end: project → hash → embed → upsert `AIKnowledgeSource`/`AIKnowledgeChunk`.
-6. Write a one-off backfill script to run `ingest_case()` over every already-ingested `CaseRecord` (this is the immediate payoff — makes the already-loaded data queryable).
-7. Only after (6) is validated manually (spot-check a few embeddings/retrieval results), move to Phase 3 (related entities) per `PLAN.md` §15.
+1. Build the DB source adapters (`PLAN.md` §5, proposed `src/quick_chat_api/modules/embedding/db_adapters.py`): discover records → eager-load relationships (`selectinload`, tenant-scoped via `session_context()`) → call `get_projector(source_type).project(entity)` → compute SHA-256 `content_hash` → skip if unchanged.
+2. Build the chunking step (`PLAN.md` §7) — likely a passthrough (one chunk per projected document) for Phase 2, unless a `case_summary` document exceeds the embedding model's token limit.
+3. Build the minimal ingestion path for one entity type (`ingest_case(case_id)`) end-to-end: DB read → project → hash → close session → `get_embedding_provider().embed_documents(...)` → new DB transaction → bulk upsert `AIKnowledgeSource`/`AIKnowledgeChunk` (see `PLAN.md` §9 for the async/DB-safety sequencing — never hold a transaction open across the embedding call).
+4. Write a one-off backfill script to run `ingest_case()` over every already-ingested `CaseRecord` (this is the immediate payoff — makes the already-loaded data queryable).
+5. Only after (4) is validated manually (spot-check a few embeddings/retrieval results), move to Phase 3 (related entities) per `PLAN.md` §15.
 
-Do not start on retrieval (`PLAN.md` §10) or Phase 3+ until step 6 above is done and spot-checked — see `CLAUDE.md` §12 ("do not blindly increase top_k / jump ahead").
+Do not start on retrieval (`PLAN.md` §10) or Phase 3+ until step 4 above is done and spot-checked — see `CLAUDE.md` §12 ("do not blindly increase top_k / jump ahead").
 
 ---
 

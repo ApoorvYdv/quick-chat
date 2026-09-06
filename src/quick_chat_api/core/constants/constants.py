@@ -175,6 +175,16 @@ class CaseAppearanceStatus(str, Enum):
     ADJUDICATED = "ADJUDICATED"
 
 
+class AIKnowledgeSourceType(str, Enum):
+    """`ai_knowledge_source.source_type` values, also used as projector registry keys."""
+
+    CASE = "case"
+    CASE_SUMMARY = "case_summary"
+    PARTY = "party"
+    CHARGE = "charge"
+    APPEARANCE = "appearance"
+
+
 class HearingType(str, Enum):
     ARRAIGNMENT = "ARRAIGNMENT"
     AOP = "AOP"

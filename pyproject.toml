@@ -58,5 +58,11 @@ addopts = "-n auto"
 pythonpath = ["src", "."]
 testpaths = ["tests"]
 
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
+]
+
 [project.scripts]
 migrate = "quick_chat_api.migrations.run_migrations:main"
