@@ -196,23 +196,50 @@ async def retrieve(
 ```
 Return chunk content, similarity score, source metadata, case metadata, document metadata — tenant scoping is implicit via the session's `session_context()`, never a parameter that could be bypassed.
 
+**`case_record_id` pre-filtering (recorded 2026-09-07, not yet implemented):** most `ai_knowledge_chunk` rows are scoped to a single case, so when `case_record_id` is provided, filter in SQL, in the same query as the similarity search — never a global ANN search followed by a Python-side filter (`.claude/rules/rag.md`):
+```python
+stmt = (
+    select(AIKnowledgeChunk)
+    .where(AIKnowledgeChunk.case_record_id == case_record_id)
+    .order_by(AIKnowledgeChunk.embedding.cosine_distance(query_vector))
+    .limit(top_k)
+)
+```
+- `case_record_id` already has its own standalone btree index (`ix_ai_knowledge_chunk_case_id`); the diskann index (§2) is a separate, single-column index on `embedding` only — there is no composite/partial index combining the two today.
+- Before assuming the standalone indexes are sufficient, check the query plan (`EXPLAIN ANALYZE`) once real data volume exists: confirm Postgres/pgvectorscale pushes the `case_record_id` filter down into (or ahead of) the diskann ANN search rather than doing a full ANN scan and filtering the result. DiskANN is graph-based (unlike ivfflat's bucket partitioning), so it tends to tolerate prefiltering better, but this needs to be verified against real data, not assumed.
+- If plan inspection shows the filter isn't pushed down efficiently at scale, the fallback is a partial diskann index scoped to hot case_record_ids — do not add this speculatively; only after profiling shows it's needed, and only with approval since it touches the migration.
+
 Then a **context builder** (filter → dedupe → rank → respect token limits) converts results into structured LLM context — per `CLAUDE.md` §14.
 
 ---
 
-## 11. Ingestion Service Entry Points — `[ ]` NOT STARTED
+## 11. Ingestion Service Entry Points — `[x]` DONE for case-level entry points
 
-Proposed location: `src/quick_chat_api/modules/embedding/ingestion_service.py`.
+Built at [`src/quick_chat_api/modules/embedding/ingestion_service.py`](src/quick_chat_api/modules/embedding/ingestion_service.py) as `CaseIngestionService(engine, agency)`:
 
 ```
-ingest_case(case_id)
-ingest_document(document_id)
-reindex_case(case_id)
-reindex_document(document_id)
-delete_case_index(case_id)
+ingest_case(case_id)          # skips entities whose content_hash + indexing_key are unchanged
+reindex_case(case_id)         # force re-embed, ignoring the skip check
+delete_case_index(case_id)    # soft-delete: status=DELETED, is_active=False, purges chunks
 ```
 
-Idempotent: skip re-embedding when `content_hash` + `embedding_model` + projection/chunking version are unchanged.
+`ingest_document(document_id)` / `reindex_document(document_id)` (single-entity granularity) are **not built** — `CaseKnowledgeSourceAdapter` only discovers at case granularity (`discover_all`, plus per-type `discover_parties`/etc. returning *all* of that type), so a single-entity entry point would need a new adapter method first. Deferred until a real use case needs it.
+
+Idempotency key: `content_hash` (SHA-256 of `ProjectedDocument.content`) **and** an `indexing_key` (`EMBEDDING_PROVIDER|EMBEDDING_MODEL|EMBEDDING_VERSION|CHUNKING_STRATEGY|CHUNKING_VERSION`, stored in `source_metadata["indexing_key"]`) — both must match the existing row for an entity to be skipped, so a model/chunking change triggers re-embedding even with byte-identical content.
+
+Transaction safety (`PLAN.md` §9): one read session (discovery + existing-row lookup) closed before any embedding call; one separate write session for all persistence, committed once at the end.
+
+Failure isolation (`PLAN.md` §12): each entity's chunk/embed call is wrapped individually; a failure marks that entity's `ai_knowledge_source` row `FAILED` with `source_metadata.error` (its last-known-good chunks, if any, are left untouched) and the rest of the case continues. Each entity's DB write also runs in its own `SAVEPOINT` (`session.begin_nested()`) so one row's write failure doesn't abort the whole write transaction.
+
+`status` enforcement: application-level only via the new `AIKnowledgeStatus` enum (`core/constants/constants.py`) — no DB check constraint, per the user's explicit call (§2's open gap, now resolved).
+
+Exposed via both a controller/router (`core/controllers/ingestion_controller.py`, `routers/ingestion_router.py` — `POST /cases/{case_id}/index/reindex`, `DELETE /cases/{case_id}/index`) and a standalone backfill script (`data_ingestion/backfill_embeddings.py`), per the user's explicit call to build both now rather than one now/one later.
+
+Tenant resolution for the new endpoints follows the app's now-standard router/controller pattern (`.claude/rules/architecture.md` "Router + Controller wiring pattern"): `APIRouter(..., dependencies=[Depends(get_agency_header)])` (`utils/dependencies.py`) validates the `agency` request header against `config.agencies` and writes it into `RequestContext.agency` (`utils/context.py`, backed by `starlette_context` — middleware wired in `main.py`). `IngestionController` (class-based, constructed via `Depends()`) reads `RequestContext.agency` in `__init__` rather than receiving it as a parameter — this is the only tenant-resolution mechanism in the app today (no auth middleware exists yet); meant to be swapped for real auth-derived resolution later without changing the controller/module layers beneath it. All client-facing errors here (`ErrorResponse.AGENCY_NOT_FOUND`, `.CASE_NOT_FOUND`, `.CLIENT_NOT_PROVIDED`) go through the new unified `core/constants/error_response.py:ErrorResponse`.
+
+Unit tests: `tests/modules/embedding/test_ingestion_service.py` — skip-unchanged, new-entity embed, forced reindex of an otherwise-unchanged entity, per-entity failure isolation (one bad entity doesn't block others), soft-delete.
+
+**Bug fixed in passing:** `core/database/connections.py` had a broken import (`quick_chat_api.database.config` instead of `quick_chat_api.core.database.config`) — never caught because nothing imported it before this router needed `get_async_engine()`.
 
 ---
 
@@ -240,7 +267,7 @@ Log per `CLAUDE.md` §26/§20 (safe metadata only, no content/prompts): ingestio
 
 ```
 Phase 1: pgvector + knowledge tables                         [x] DONE
-Phase 2: CaseRecord + PartyDetail + CaseCharge + CaseAppearance projection+embedding   [ ] NOT STARTED  ← current focus
+Phase 2: CaseRecord + PartyDetail + CaseCharge + CaseAppearance projection+embedding   [~] CODE DONE, not yet run against real DB  ← current focus
 Phase 3: related entities (Criminal, VehicleDetail, AddressDetail,
          PaymentRecord, ImposedDisposition, ImposedSanction)  [ ] NOT STARTED
 Phase 4: PDF/DOCX/attachments (file adapters + S3)            [ ] NOT STARTED
@@ -261,12 +288,12 @@ Do not jump ahead — Phase 2 must be working and validated (retrieval quality c
 - [x] DB source adapters
 - [ ] File parsers/adapters (Phase 4)
 - [x] Chunking module
-- [ ] Embedding provider abstraction
-- [ ] Ingestion service
+- [x] Embedding provider abstraction
+- [x] Ingestion service (case-level; document-level deferred)
 - [ ] Retrieval service
 - [ ] Context builder
 - [ ] Tests (unit + integration + retrieval eval fixture)
-- [ ] CLI/script to backfill already-ingested cases (`data_ingestion/data/batch_1.json` data)
+- [x] CLI/script to backfill already-ingested cases (`data_ingestion/backfill_embeddings.py`) — not yet run against a real DB
 - [ ] Configuration/env variables (`Settings` additions)
 - [ ] Documentation
 - [ ] Sample retrieval queries

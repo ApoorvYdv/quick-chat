@@ -30,12 +30,12 @@ services:
     environment:
       PYTHONUNBUFFERED: 1
       LOG_LEVEL: debug
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: quick_chat
-      POSTGRES_PORT: 5432
-      POSTGRES_HOST: postgres_db
-      S3_BUCKET: quick-chat-storage
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DB_NAME: quick_chat
+      DB_PORT: 5432
+      DB_HOST: postgres_db
+      AWS_S3_BUCKET: quick-chat-storage
       AWS_ACCESS_KEY_ID: username
       AWS_SECRET_ACCESS_KEY: password
       AWS_DEFAULT_REGION: ap-south-1

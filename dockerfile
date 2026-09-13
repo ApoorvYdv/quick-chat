@@ -15,7 +15,14 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /usr/local/bin/uv
 
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=120 \
+    UV_CONCURRENT_DOWNLOADS=4
+
+# Prefer IPv4 for DNS resolution: some networks have a broken/throttled IPv6
+# route to package CDNs (e.g. download.pytorch.org), which silently stalls
+# large wheel downloads for minutes instead of failing fast.
+RUN echo 'precedence ::ffff:0:0/96 100' >> /etc/gai.conf
 
 # Copy dependency metadata first for better layer caching
 COPY pyproject.toml uv.lock README.md ./
@@ -27,9 +34,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy application source
 COPY src ./src
 
-# Install project
+# Install project (editable so the bind-mounted src/ in docker-compose
+# dev is what actually gets imported, letting uvicorn --reload pick up
+# live edits instead of reloading a stale copy baked into site-packages)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-editable
+    uv sync --locked
 
 
 # --------------------------------------------------

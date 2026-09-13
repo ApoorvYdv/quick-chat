@@ -4,6 +4,65 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 
 ---
 
+## 2026-09-13 — Session: standardized router/controller pattern, RequestContext, unified ErrorResponse
+
+**Done this session (user-driven refactor of the router/controller built 2026-09-06, plus this session's own cleanup/docs):**
+- The user replaced the plain-function tenant dependency (`get_agency_schema` reading `X-Agency-Schema`) with the pattern now documented as the app standard:
+  - `utils/context.py:RequestContext` — a typed, property-based facade over `starlette_context`'s per-request `ContextVar` (`agency`, `config`, `user_details`, `case_types`). Added `starlette_context` as a dependency (`pyproject.toml`) and `RawContextMiddleware` to `main.py`.
+  - `utils/dependencies.py:get_agency_header` — reads a plain `agency` request header, validates it against `config.agencies` (`Agencies.name`) via `validate_active_agency`, and writes it into `RequestContext.agency`. Declared once on the router (`APIRouter(..., dependencies=[Depends(get_agency_header)])`), not per-endpoint.
+  - `core/controllers/ingestion_controller.py:IngestionController` — now a class, constructed via FastAPI's class-based `Depends()` (`engine: Annotated[AsyncEngine, Depends(get_async_engine)]` in `__init__`), reading `self.agency = RequestContext.agency` instead of receiving `agency` as a method parameter. Endpoints in `routers/ingestion_router.py` now take `controller: Annotated[IngestionController, Depends()]`.
+  - `core/constants/error_response.py:ErrorResponse` — added by the user as the single home for client-facing (4xx) message strings, starting with `CLIENT_NOT_PROVIDED`.
+- This session's work on top of that:
+  - Documented the pattern as mandatory for every future route: `.claude/rules/architecture.md` gained "Router + Controller wiring pattern (concrete)", "Request Context", and "Error Responses" sections, each pointing at `ingestion_router.py`/`ingestion_controller.py` as the reference implementation (mirrors how `coding-patterns.md` points at `core/llm/embedding/`). `CLAUDE.md`'s Controller section gained a one-paragraph pointer to it.
+  - Extended `ErrorResponse` with `AGENCY_NOT_FOUND` and `CASE_NOT_FOUND`, and replaced every remaining inline literal client-facing error string with a reference to it: `utils/dependencies.py`'s hardcoded `"Agency not found"`, and `routers/ingestion_router.py`'s `detail=str(exc)` (which leaked the internal `CaseNotFoundError` message, e.g. `case_id=... not found`) now `detail=ErrorResponse.CASE_NOT_FOUND`.
+  - Fixed two inconsistent imports the user's edit introduced (`from src.quick_chat_api.utils....` instead of `from quick_chat_api.utils....`) in `routers/ingestion_router.py` and `core/controllers/ingestion_controller.py` — these happened to still resolve (Python 3 implicit namespace packages + `pythonpath = ["src", "."]` in `pyproject.toml`), but were inconsistent with every other import in the codebase and fragile outside that exact `sys.path` setup.
+  - Added `tests/routers/test_ingestion_router.py` (6 tests, first test in a new `tests/routers/` dir) — missing/empty agency header, unknown agency, successful reindex delegating to the controller, case-not-found mapping to the unified `ErrorResponse.CASE_NOT_FOUND`, delete-index delegation. Mocks `utils.dependencies.validate_active_agency` and `IngestionController` methods directly (same mocking style as the rest of the suite) rather than hitting a real DB. All 43 tests in the repo pass (`uv run pytest`).
+- Updated `PLAN.md` §11's tenant-resolution paragraph to describe the pattern actually kept, and corrected the 2026-09-06 `CHECKPOINT.md` entry's now-stale description (pointer added rather than rewriting history).
+
+**Decisions made:**
+- User's own call, not asked this session: class-based controller DI + `RequestContext` + unified `ErrorResponse` — adopted as-is and generalized into a documented pattern rather than treated as one-off.
+- `ErrorResponse` messages stay generic (no interpolated case/agency IDs) per the new architecture.md rule — request-specific detail belongs in server-side logs, not the client-facing `detail` string.
+
+**New open questions:**
+- None new. Same three from the prior entry remain open: prod embedding provider/model, real auth-derived tenant resolution (this session hardened the *placeholder*, didn't replace it), and single-entity (`ingest_document`/`reindex_document`) granularity.
+- Still not run against a real Postgres DB — unchanged from the prior entry.
+
+**Next concrete action:**
+- Unchanged from the prior entry: run `data_ingestion/backfill_embeddings.py --agency <schema>` against the real DB, spot-check, then move to retrieval (`PLAN.md` §10) — not Phase 3, per `CLAUDE.md` §12.
+- When retrieval's router/controller is built, it must follow the same pattern documented in `.claude/rules/architecture.md` (class-based controller, `RequestContext`, `ErrorResponse`) rather than re-deriving its own shape.
+
+---
+
+## 2026-09-06 — Session: ingestion service + router/controller + backfill script (Phase 2, PLAN.md §11)
+
+**Done this session:**
+- Built `CaseIngestionService` at [`src/quick_chat_api/modules/embedding/ingestion_service.py`](src/quick_chat_api/modules/embedding/ingestion_service.py): `ingest_case(case_id)`, `reindex_case(case_id)` (force re-embed), `delete_case_index(case_id)` (soft-delete). Wires together `CaseKnowledgeSourceAdapter.discover_all` → SHA-256 `content_hash` + an `indexing_key` fingerprint (provider/model/version + chunking strategy/version) → skip-if-unchanged → `get_chunker().chunk(...)` → `get_embedding_provider().embed_documents(...)` → a separate write transaction that upserts `AIKnowledgeSource`/`AIKnowledgeChunk` via `INSERT ... ON CONFLICT DO UPDATE` on the existing dedupe unique constraint.
+- Transaction/embedding-call separation per `PLAN.md` §9: one read session (discovery + existing-row lookup) closed before any embedding call, one separate write session for everything else.
+- Per-entity failure isolation per `PLAN.md` §12: each entity's chunk/embed call and DB write (the latter in its own `SAVEPOINT` via `session.begin_nested()`) are isolated — one bad entity is recorded as a `FAILED` `ai_knowledge_source` row with the error in `source_metadata` (never content), and does not stop the rest of the case. A failed re-embed attempt leaves that entity's last-known-good chunks untouched rather than deleting them.
+- Added `AIKnowledgeStatus` `StrEnum` (`core/constants/constants.py`) enforcing `PENDING/PROCESSING/COMPLETED/FAILED/DELETED/SUPERSEDED` at the application layer only (resolves Open Decision #5 below) — no DB check constraint, no model change.
+- Added `Settings.EMBEDDING_VERSION` (default `"v1"`) — was missing; needed as the `ai_knowledge_chunk.embedding_version` value and as part of the `indexing_key`.
+- Built the first router/controller in the app: `core/controllers/ingestion_controller.py`, `routers/ingestion_router.py` (`POST /cases/{case_id}/index/reindex?force=`, `DELETE /cases/{case_id}/index`), wired into `main.py`. Initial tenant resolution was a plain function dependency reading an `X-Agency-Schema` header — **superseded the same day**, see the entry above this one for the pattern actually kept (`get_agency_header` + `RequestContext`, plain `agency` header).
+- Built `data_ingestion/backfill_embeddings.py` — CLI (`--agency`, optional `--case-id`, `--force`) looping `ingest_case`/`reindex_case` over every `CaseRecord` in one agency schema, per PLAN.md §16's backfill deliverable.
+- **Bug fix (pre-existing, unrelated to this session's feature but blocking it):** `core/database/connections.py` imported `quick_chat_api.database.config` (module doesn't exist) instead of `quick_chat_api.core.database.config`. Never caught because nothing imported `connections.py` before this router needed `get_async_engine()`. Fixed the one-line import; did not touch anything else in that file.
+- Added `tests/modules/embedding/test_ingestion_service.py` (5 tests: skip-unchanged, new-entity embed, forced reindex of unchanged content, per-entity failure isolation, soft-delete) — mocks `session_context`/`CaseKnowledgeSourceAdapter`/`get_embedding_provider`/`get_chunker`, same style as `test_db_adapters.py`. Verified the FastAPI app builds and both routes register (`TestClient(app).get("/openapi.json")`) and did a mocked end-to-end `TestClient` POST against `/cases/{id}/index/reindex` with `app.dependency_overrides`. All 37 tests in the repo pass (`uv run pytest`).
+
+**Decisions made (asked via AskUserQuestion, all three resolved this session):**
+1. `status` enforcement: app-level `StrEnum` only, no migration/check constraint — user's explicit call, avoids a `core/models/` change for this phase.
+2. Failure granularity: isolate per entity (one bad entity → `FAILED` row + continue; not abort-the-whole-case).
+3. Entry point: **both** a router/controller (not deferred) and a standalone backfill script, built together this session rather than router-later.
+
+**New open questions:**
+- Open Decision #1 (prod embedding provider/model, still `local`/`sentence-transformers` today) remains open.
+- Tenant resolution (now via `get_agency_header`/`RequestContext`, see the entry above) is explicitly a placeholder — real auth-derived tenant resolution is a future replacement, not yet designed.
+- `ingest_document(document_id)`/`reindex_document(document_id)` (single-entity granularity, named in `PLAN.md` §11's original spec) were **not** built — `CaseKnowledgeSourceAdapter` has no discover-by-source-id method yet; deferred until a real caller needs single-entity re-indexing instead of whole-case.
+- Still not run against a real Postgres DB — all tests mock `session_context`/`AsyncSession`. The backfill script and the two new endpoints are code-complete but unverified against TigerCloud.
+
+**Next concrete action:**
+- Run `data_ingestion/backfill_embeddings.py --agency <schema>` against the real DB where `ingest_data.py`'s data already landed, spot-check a few `ai_knowledge_chunk` rows and re-run it once to confirm the skip-unchanged path actually skips (no duplicate embedding calls).
+- Only after that manual validation, move to retrieval (`PLAN.md` §10) — do not start Phase 3 entities or retrieval before this, per `CLAUDE.md` §12 and `PLAN.md` §15.
+
+---
+
 ## 2026-09-06 — Session: Phase 4 chunking decision recorded (no code yet)
 
 **Done this session:**
@@ -149,17 +208,15 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 2. **New dependency approval** — an SDK client for whichever provider is chosen (e.g. `openai`), plus possibly a tokenizer (e.g. `tiktoken`) for token-aware chunking. Per `CLAUDE.md` §5, must ask before adding.
 3. ~~**What counts as a "document" per case**~~ — **RESOLVED** 2026-09-06: `AIKnowledgeSourceType` = `case`, `case_summary`, `party`, `charge`, `appearance` for Phase 2 (`core/constants/constants.py`).
 4. ~~**Sensitive field exclusion list**~~ — **RESOLVED** 2026-09-06 for `PartyDetail`: exclude `ssn_id` and `license_number` only; dob/phone/email/physical descriptors/license type+state are projected. `PaymentRecord`/`AddressDetail` exclusion lists still undecided — not needed until their Phase 3 projectors are built (`CaseSummaryProjector`'s payment section already aggregates rather than projecting raw `PaymentRecord` fields, so no card data leaks today).
-5. **Status enum enforcement** — `ai_knowledge_source.status` is a free-text column with no DB check constraint. Decide whether to enforce the `PENDING/PROCESSING/COMPLETED/FAILED/DELETED/SUPERSEDED` set purely at the application layer (e.g. a Python `StrEnum` + validation in the module) or request a migration to add a check constraint.
+5. ~~**Status enum enforcement**~~ — **RESOLVED** 2026-09-06: application-level only, via `AIKnowledgeStatus` `StrEnum` in `core/constants/constants.py`. No DB check constraint.
 
 ---
 
 ## Next Concrete Action (start here next session)
 
-1. Build the minimal ingestion path for one entity type (`ingest_case(case_id)`) end-to-end: `CaseKnowledgeSourceAdapter.discover_all(case_id)` → hash each `DiscoveredEntity` (SHA-256) → close session → skip unchanged (compare against existing `AIKnowledgeSource.content_hash`) → `get_chunker().chunk(...)` → `get_embedding_provider().embed_documents(...)` → new DB transaction → bulk upsert `AIKnowledgeSource`/`AIKnowledgeChunk` (see `PLAN.md` §9 for the async/DB-safety sequencing — never hold a transaction open across the embedding call).
-2. Write a one-off backfill script to run `ingest_case()` over every already-ingested `CaseRecord` (this is the immediate payoff — makes the already-loaded data queryable).
-3. Only after (2) is validated manually (spot-check a few embeddings/retrieval results), move to Phase 3 (related entities) per `PLAN.md` §15.
-
-Do not start on retrieval (`PLAN.md` §10) or Phase 3+ until step 3 above is done and spot-checked — see `CLAUDE.md` §12 ("do not blindly increase top_k / jump ahead").
+1. Run `data_ingestion/backfill_embeddings.py --agency <schema>` against the real Postgres DB, spot-check `ai_knowledge_chunk` rows for a few cases, and re-run once to confirm the skip-unchanged path actually skips.
+2. Only after that manual validation, build retrieval (`PLAN.md` §10): `modules/embedding/retrieval.py`'s `retrieve(session, query, case_record_id, source_types, top_k)`.
+3. Do not start Phase 3 (related entities) until retrieval is validated end-to-end against real ingested data, per `CLAUDE.md` §12 and `PLAN.md` §15.
 
 ---
 

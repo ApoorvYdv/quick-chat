@@ -22,6 +22,8 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "asyncpg>=0.31.0",
     "sentence-transformers>=6.0.1",
+    "torch>=2.2",
+    "starlette-context>=0.5.1",
 ]
 
 [build-system]
@@ -41,6 +43,17 @@ include = [
   "dockerfile",
   "docker-compose.yml",
 ]
+
+# sentence-transformers pulls in torch; PyPI's default torch wheel bundles
+# full GPU/CUDA support (~3GB of nvidia-* packages) that this service never
+# uses. Point torch at PyTorch's CPU-only wheel index instead.
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [tool.ruff]
 line-length = 88

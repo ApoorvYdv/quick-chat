@@ -185,6 +185,23 @@ class AIKnowledgeSourceType(str, Enum):
     APPEARANCE = "appearance"
 
 
+class AIKnowledgeStatus(str, Enum):
+    """`ai_knowledge_source.status` values.
+
+    The column itself is free-text with no DB check constraint (`PLAN.md`
+    §2), so this enum is the only thing enforcing the allowed value set --
+    every write to `AIKnowledgeSource.status` must go through this enum,
+    never a raw string literal.
+    """
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    DELETED = "deleted"
+    SUPERSEDED = "superseded"
+
+
 class HearingType(str, Enum):
     ARRAIGNMENT = "ARRAIGNMENT"
     AOP = "AOP"

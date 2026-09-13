@@ -120,6 +120,13 @@ Controllers may orchestrate:
 
 Keep controllers small and focused.
 
+Every router/controller pair must follow the same concrete wiring pattern —
+class-based controller via FastAPI's `Depends()`, tenant/request-scoped data
+read from `RequestContext` rather than threaded through parameters, and every
+client-facing error message sourced from `ErrorResponse` — documented with a
+reference implementation in `.claude/rules/architecture.md`. Do not invent a
+per-route variation.
+
 ## Module
 
 Modules contain persistence and domain operations.

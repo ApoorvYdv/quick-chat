@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     EMBEDDING_API_KEY: str | None = Field(
         default=None, description="API key for a remote embedding provider (if any)"
     )
+    EMBEDDING_VERSION: str = Field(
+        default="v1",
+        description="Embedding provider/model version, stamped into every chunk's "
+        "embedding_version column and into the source's indexing key so a model "
+        "or provider change is detected and triggers re-embedding",
+    )
 
     # Chunking
     CHUNKING_STRATEGY: str = Field(
