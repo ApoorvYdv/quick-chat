@@ -1,4 +1,5 @@
 import asyncio
+from itertools import chain
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
@@ -62,6 +63,8 @@ def _write_session() -> AsyncMock:
         result = MagicMock()
         if isinstance(stmt, Insert):
             result.scalar_one.return_value = uuid4()
+        else:
+            result.scalars.return_value.all.return_value = []
         return result
 
     session.execute = AsyncMock(side_effect=_execute)
@@ -84,7 +87,10 @@ def _entity(case_id: UUID, source_id: str, content: str = "Case Number: CR-1") -
 def _patch_pipeline(monkeypatch, discovered, existing_rows, read_session=None, write_session=None):
     read_session = read_session or _read_session(existing_rows)
     write_session = write_session or _write_session()
-    contexts = iter([read_session, write_session])
+    # After the read/write sessions, `_mark_vector_sync` opens one more
+    # session per `_run` call to record `vector_sync` -- hand it a fresh
+    # generic session each time rather than special-casing its content.
+    contexts = chain([read_session, write_session], iter(AsyncMock, None))
 
     def fake_session_context(engine, agency=None):
         return _FakeSessionCtx(next(contexts))
@@ -94,6 +100,7 @@ def _patch_pipeline(monkeypatch, discovered, existing_rows, read_session=None, w
 
     monkeypatch.setattr(svc, "session_context", fake_session_context)
     monkeypatch.setattr(svc, "CaseKnowledgeSourceAdapter", MagicMock(return_value=fake_adapter))
+    monkeypatch.setattr(svc, "get_vector_store", MagicMock(return_value=MagicMock()))
 
     provider = MagicMock()
     provider.embed_documents.side_effect = lambda texts: [[0.1, 0.2] for _ in texts]
@@ -214,6 +221,7 @@ class TestDeleteCaseIndex:
         monkeypatch.setattr(
             svc, "session_context", lambda engine, agency=None: _FakeSessionCtx(session)
         )
+        monkeypatch.setattr(svc, "get_vector_store", MagicMock(return_value=MagicMock()))
 
         service = CaseIngestionService(engine=MagicMock(), agency="test_agency")
         deleted = asyncio.run(service.delete_case_index(case_id))

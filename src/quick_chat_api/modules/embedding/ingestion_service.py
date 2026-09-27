@@ -20,16 +20,18 @@ Two safety properties this module owns:
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import selectinload
+from uuid_utils.compat import uuid7
 
 from quick_chat_api.core.constants.constants import AIKnowledgeStatus
 from quick_chat_api.core.database.session_context_manager import session_context
@@ -37,6 +39,9 @@ from quick_chat_api.core.llm.embedding.base import EmbeddingProvider
 from quick_chat_api.core.llm.embedding.exceptions import EmbeddingProviderError
 from quick_chat_api.core.llm.embedding.factory import get_embedding_provider
 from quick_chat_api.core.models.agency.agency import AIKnowledgeChunk, AIKnowledgeSource
+from quick_chat_api.core.vectorstore.base import VectorFilter, VectorPoint
+from quick_chat_api.core.vectorstore.exceptions import VectorStoreError
+from quick_chat_api.core.vectorstore.factory import get_vector_store
 from quick_chat_api.modules.embedding.chunking.base import Chunk
 from quick_chat_api.modules.embedding.chunking.exceptions import ChunkingError
 from quick_chat_api.modules.embedding.chunking.factory import get_chunker
@@ -129,6 +134,16 @@ class _PreparedWrite:
     vectors: list[list[float]]
 
 
+@dataclass
+class _VectorSyncBatch:
+    """Everything the post-commit Qdrant dual-write step needs, accumulated
+    across every entity persisted in one `_persist` call."""
+
+    source_keys: list[_SourceKey] = field(default_factory=list)
+    stale_chunk_ids: list[UUID] = field(default_factory=list)
+    points: list[VectorPoint] = field(default_factory=list)
+
+
 @dataclass(frozen=True)
 class _FailedWrite:
     entity: DiscoveredEntity
@@ -179,7 +194,20 @@ class CaseIngestionService:
                 source.is_active = False
                 source.chunks.clear()
             await session.commit()
-            return len(sources)
+
+        try:
+            await asyncio.to_thread(
+                get_vector_store().delete_by_filter,
+                self._agency,
+                VectorFilter(case_record_id=case_id),
+            )
+        except VectorStoreError as exc:
+            logger.error(
+                "vector store delete-by-filter failed",
+                extra={"agency": self._agency, "case_id": str(case_id), "error": str(exc)},
+            )
+
+        return len(sources)
 
     async def _run(self, case_id: UUID, *, force: bool) -> CaseIngestionResult:
         provider = get_embedding_provider()
@@ -284,11 +312,14 @@ class CaseIngestionService:
         indexing_key: str,
     ) -> list[EntityIngestionOutcome]:
         outcomes: list[EntityIngestionOutcome] = []
+        vector_batch = _VectorSyncBatch()
         async with session_context(self._engine, self._agency) as session:
             for item in prepared:
                 try:
                     async with session.begin_nested():
-                        await self._write_embedded(session, item, indexing_key)
+                        stale_ids, points = await self._write_embedded(
+                            session, item, indexing_key
+                        )
                 except SQLAlchemyError as exc:
                     logger.error(
                         "entity persistence failed",
@@ -307,6 +338,12 @@ class CaseIngestionService:
                         )
                     )
                     continue
+
+                vector_batch.source_keys.append(
+                    (item.entity.source_table, item.entity.source_id, item.entity.source_type)
+                )
+                vector_batch.stale_chunk_ids.extend(stale_ids)
+                vector_batch.points.extend(points)
 
                 outcomes.append(
                     EntityIngestionOutcome(
@@ -345,14 +382,63 @@ class CaseIngestionService:
                 )
 
             await session.commit()
+
+        await self._sync_vector_store(vector_batch)
         return outcomes
+
+    async def _sync_vector_store(self, batch: _VectorSyncBatch) -> None:
+        """Best-effort dual-write to the vector store after the Postgres
+        transaction has already committed. Postgres is the source of truth;
+        a Qdrant failure here is logged and recorded via `vector_sync` in
+        `source_metadata`, never raised back to the caller."""
+        if not batch.source_keys:
+            return
+
+        vector_store = get_vector_store()
+        try:
+            if batch.stale_chunk_ids:
+                await asyncio.to_thread(
+                    vector_store.delete_points, self._agency, batch.stale_chunk_ids
+                )
+            await asyncio.to_thread(
+                vector_store.upsert_points, self._agency, batch.points
+            )
+            sync_status = "ok"
+        except VectorStoreError as exc:
+            logger.error(
+                "vector store dual-write failed",
+                extra={"agency": self._agency, "entity_count": len(batch.source_keys), "error": str(exc)},
+            )
+            sync_status = "failed"
+
+        await self._mark_vector_sync(batch.source_keys, sync_status)
+
+    async def _mark_vector_sync(
+        self, source_keys: list[_SourceKey], status: str
+    ) -> None:
+        async with session_context(self._engine, self._agency) as session:
+            for source_table, source_id, source_type in source_keys:
+                await session.execute(
+                    update(AIKnowledgeSource)
+                    .where(
+                        AIKnowledgeSource.source_table == source_table,
+                        AIKnowledgeSource.source_id == source_id,
+                        AIKnowledgeSource.source_type == source_type,
+                    )
+                    .values(
+                        source_metadata=AIKnowledgeSource.source_metadata.op("||")(
+                            {"vector_sync": status}
+                        )
+                    )
+                )
+            await session.commit()
 
     async def _write_embedded(
         self,
         session: AsyncSession,
         item: _PreparedWrite,
         indexing_key: str,
-    ) -> None:
+    ) -> tuple[list[UUID], list[VectorPoint]]:
         source_id = await self._upsert_source(
             session,
             entity=item.entity,
@@ -361,14 +447,23 @@ class CaseIngestionService:
             extra_metadata={"indexing_key": indexing_key},
         )
 
+        stale_ids_result = await session.execute(
+            select(AIKnowledgeChunk.id).where(AIKnowledgeChunk.document_id == source_id)
+        )
+        stale_chunk_ids = list(stale_ids_result.scalars().all())
+
         # Full replace rather than per-chunk upsert: re-chunking can change
         # the chunk count, which would otherwise leave stale trailing chunks
-        # from a previous, larger split behind.
+        # from a previous, larger split behind. Chunk ids are minted here
+        # (rather than relying on the model's flush-time default) so the
+        # same ids can be used as Qdrant point ids without an extra flush.
         await session.execute(
             delete(AIKnowledgeChunk).where(AIKnowledgeChunk.document_id == source_id)
         )
+        chunk_ids = [uuid7() for _ in item.chunks]
         session.add_all(
             AIKnowledgeChunk(
+                id=chunk_id,
                 document_id=source_id,
                 case_record_id=item.entity.case_record_id,
                 chunk_index=chunk.index,
@@ -380,8 +475,35 @@ class CaseIngestionService:
                 embedding_version=settings.EMBEDDING_VERSION,
                 metadata_=chunk.metadata,
             )
-            for chunk, vector in zip(item.chunks, item.vectors, strict=True)
+            for chunk_id, chunk, vector in zip(
+                chunk_ids, item.chunks, item.vectors, strict=True
+            )
         )
+
+        points = [
+            VectorPoint(
+                id=chunk_id,
+                vector=vector,
+                payload={
+                    "case_record_id": str(item.entity.case_record_id),
+                    "source_type": item.entity.source_type,
+                    "source_table": item.entity.source_table,
+                    "source_id": item.entity.source_id,
+                    "document_id": str(source_id),
+                    "chunk_index": chunk.index,
+                    "status": AIKnowledgeStatus.COMPLETED.value,
+                    "is_active": True,
+                    "embedding_model": settings.EMBEDDING_MODEL,
+                    "embedding_version": settings.EMBEDDING_VERSION,
+                    "chunking_strategy": settings.CHUNKING_STRATEGY,
+                    "chunking_version": settings.CHUNKING_VERSION,
+                },
+            )
+            for chunk_id, chunk, vector in zip(
+                chunk_ids, item.chunks, item.vectors, strict=True
+            )
+        ]
+        return stale_chunk_ids, points
 
     async def _write_failed(self, session: AsyncSession, item: _FailedWrite) -> None:
         # Chunks are deliberately left untouched: a failed re-embed attempt

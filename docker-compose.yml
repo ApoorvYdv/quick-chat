@@ -20,6 +20,17 @@ services:
     networks:
       - court-cms-net
 
+  # Vector index for AI-knowledge chunks. Postgres remains the system of
+  # record (content/lineage); Qdrant only holds embeddings + filter payload.
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - court-cms-net
+
   # This service runs the fastapi app server for running APIs
   app:
     build:
@@ -35,6 +46,7 @@ services:
       DB_NAME: quick_chat
       DB_PORT: 5432
       DB_HOST: postgres_db
+      QDRANT_URL: http://qdrant:6333
       AWS_S3_BUCKET: quick-chat-storage
       AWS_ACCESS_KEY_ID: username
       AWS_SECRET_ACCESS_KEY: password
@@ -54,3 +66,4 @@ networks:
 
 volumes:
   pg_data:
+  qdrant_data:

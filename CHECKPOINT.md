@@ -4,6 +4,112 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 
 ---
 
+## 2026-09-26 — Session: A3 done — dual-write wired into `CaseIngestionService`, smoke-tested against real Qdrant
+
+**Done this session:**
+- Resolved a handful of implementation-shape questions via `AskUserQuestion` before writing code (all "Recommended" options chosen): `qdrant-client`'s sync SDK calls wrapped in `asyncio.to_thread(...)` rather than called directly (avoids blocking the event loop, `CLAUDE.md` §18); `AIKnowledgeChunk.id` minted client-side via `uuid7()` at chunk-construction time (not left to the model's flush-time default) so the same id can double as the Qdrant point id without an extra `session.flush()`; a Qdrant failure is best-effort (logged + `vector_sync="failed"`, never fails `ingest_case`); `delete_case_index` also calls `delete_by_filter` on the vector store.
+- Wired dual-write into `modules/embedding/ingestion_service.py`: `_write_embedded` now also returns the batch's `VectorPoint`s (one per chunk, ids = the same minted `uuid7()`s used for the Postgres rows); `_persist` accumulates these across all embedded entities in the run and, **after** `session.commit()`, calls `get_vector_store().upsert_points(agency, points)` once for the whole batch (not per-entity) via `asyncio.to_thread`.
+- Caught and fixed a real correctness gap while implementing, not just wiring the happy path: `_write_embedded` already does a full delete+recreate of an entity's `AIKnowledgeChunk` rows on every re-embed (chunk count can change between runs), which would otherwise leave the *old* chunks' vectors permanently orphaned in Qdrant under ids nothing in Postgres references anymore. Fixed by capturing each entity's pre-delete chunk ids and calling `delete_points(agency, stale_ids)` before the upsert for that batch.
+- `vector_sync` outcome (`"ok"`/`"failed"`) is recorded into each affected `ai_knowledge_source.source_metadata` via a small follow-up `UPDATE ... SET source_metadata = source_metadata || '{"vector_sync": ...}'` per entity, in a new session opened after the Qdrant call — necessarily a second write, since the Qdrant outcome for the whole batch isn't known until after the entities' own Postgres commit.
+- `delete_case_index` now also calls `get_vector_store().delete_by_filter(agency, VectorFilter(case_record_id=case_id))` after its existing Postgres soft-delete commits, same best-effort/log-only failure handling as the write path.
+- Updated `tests/modules/embedding/test_ingestion_service.py`: mocks `get_vector_store()`, and the shared `_patch_pipeline` test helper now hands out an extra generic session per call (via `itertools.chain(..., iter(AsyncMock, None))`) for the new post-commit `vector_sync`-marking session, instead of the fixed 2-session (read/write) list. Still 5 tests, all passing; all 54 repo tests pass.
+- **Smoke-tested against a real local Qdrant**, not just mocks: `docker compose up -d qdrant`, then a throwaway script hitting `get_vector_store()` directly — `upsert_points` → `search` with a `case_record_id` filter (2/2 hits) → `delete_by_filter` → re-`search` (0 hits). Exercised the actual collection-per-agency codepath (lazy collection creation, payload indexing, filter construction), not a mocked `qdrant_client`. Left the `qdrant` container running locally afterward.
+- Updated `PLAN.md`'s A3 bullet from "NOT STARTED" to `[x]` DONE with the implementation detail above.
+
+**Decisions made (asked via `AskUserQuestion`, all six resolved this session):** see bullet above — sync/async bridge, chunk-id minting, Qdrant-failure handling, delete-sync, `vector_sync` field placement, and Qdrant-call batching (all "Recommended" options).
+
+**New open questions:**
+- None new. The stale `qdrant-client` container is left running locally (`docker compose up -d qdrant`) — fine for continued local dev, but worth remembering it's there if disk/resource use matters later.
+- `.env.example` still needs the vectorstore `Settings` vars added manually (unchanged from A1's entry — still outside this session's write permissions).
+
+**Next concrete action:**
+- A4: `modules/embedding/retrieval.py` — `retrieve(session, agency, query, case_record_id=None, source_types=None, top_k=20)`, per `PLAN.md`'s A4 bullet. Then A5 (context builder + `core/llm/generation/` + first chat endpoint), per `PLAN.md`'s A7 rollout order. Do not start Phase B before A4/A5/A6 are validated against real ingested case data, per `CLAUDE.md` §12/§27.
+
+---
+
+## 2026-09-26 — Session: A1 revised to collection-per-agency (same day as initial build)
+
+**Done this session:**
+- User asked to compare Qdrant's single-collection-with-payload-filter vs. collection-per-agency approaches, and after the explanation (physical isolation, simpler per-tenant ops, but per-collection overhead at scale) chose **collection-per-agency**, expecting a high enough number of agencies that the operational benefits and hard isolation guarantee outweigh a shared-index approach.
+- Rewrote `core/vectorstore/base.py`: every `VectorStore` method (`upsert_points`, `delete_points`, `delete_by_filter`, `search`) now takes `agency: str` as an explicit first argument. `VectorFilter` dropped its `agency` field entirely — tenant scoping is now structural (which collection a call targets), not a filter condition that could be forgotten.
+- Rewrote `core/vectorstore/providers/qdrant.py`: `QdrantVectorStore` resolves `agency` → collection name as `f"{QDRANT_COLLECTION_PREFIX}__{sanitized_agency}"` (lowercased, non-`[a-z0-9_-]` chars replaced with `_`), and creates that collection (+ its payload indexes) lazily on first use per agency, caching which collections have already been ensured in an in-process `set` so repeated calls for the same agency don't re-check existence. `agency` is no longer one of the indexed payload fields (12 remain: `case_record_id`, `source_type`, `source_table`, `source_id`, `document_id`, `chunk_index`, `status`, `is_active`, `embedding_model`, `embedding_version`, `chunking_strategy`, `chunking_version`).
+- Renamed `Settings.QDRANT_COLLECTION` → `Settings.QDRANT_COLLECTION_PREFIX` (same default, `"case_knowledge_chunks"`) to reflect that it's now a prefix shared across many collections, not a single collection name.
+- Rewrote `tests/core/vectorstore/test_qdrant_store.py` (11 tests, up from 7): collection created lazily and only once per agency, different agencies map to distinct sanitized collection names, agency names with spaces/punctuation sanitize correctly, empty-list upserts/deletes never touch the Qdrant client at all (not even `collection_exists`), optional `case_record_id`/`source_type` filter construction (no more `agency` condition to assert on), filtered delete/search scoped to the right per-agency collection name. All 54 repo tests pass (`uv run pytest`).
+- Updated `PLAN.md`'s A1/A3/A4 bullets to describe collection-per-agency instead of the original single-collection design, and to update the `VectorStore` call shapes A3/A4 will need to use (`agency` as a positional arg, not inside `VectorFilter`).
+
+**Decisions made:**
+- Collection-per-agency over single-collection-with-payload-filter, given the expected number of agencies. This is a revision of A1's original design from earlier the same day, made before any downstream code (A3 ingestion, A4 retrieval) depended on the old shape — no migration/rework cost beyond the vectorstore package and its tests themselves.
+
+**New open questions:**
+- None new beyond what the original A1 entry already listed (`.env.example` still needs manual updates; no real Qdrant instance has been smoke-tested yet).
+- Collection-per-agency means a very large number of agencies (thousands+) would eventually need Qdrant resource planning (each collection has fixed HNSW/index overhead) — not a concern at current/expected scale, but worth remembering if agency count grows by orders of magnitude later.
+
+**Next concrete action:**
+- Unchanged from the original A1 entry below: A3 (wire dual-write into `CaseIngestionService`, using the new `agency`-first method signatures), then a real `docker compose up qdrant` smoke test, then A4/A5.
+
+---
+
+## 2026-09-26 — Session: Phase A started — `core/vectorstore/` (Qdrant) built, A1 done
+
+**Done this session:**
+- Resolved the open questions blocking Phase A via `AskUserQuestion`:
+  1. Terminology: `agency` is the Qdrant tenant payload field (no separate "client" concept).
+  2. Approved `uv add qdrant-client` + a new `qdrant` Docker Compose service (self-hosted, matches existing local-dev pattern).
+  3. **Held off** on A2 (dropping `AIKnowledgeChunk.embedding`/its diskann index) — not doing that yet.
+  4. Because A2 is deferred, ingestion will **dual-write** to both pgvector and Qdrant rather than cutting over — more write cost, but keeps pgvector search working and makes it easy to compare/roll back before committing to a single migration later.
+  5. A5's default LLM: `claude-sonnet-5` via the Anthropic provider (OpenAI as the second registered provider, per the existing plan).
+- Built **A1 in full**: `src/quick_chat_api/core/vectorstore/` — `base.py` (`VectorStore` ABC, `VectorPoint`/`VectorSearchResult`/`VectorFilter`), `exceptions.py`, `registry.py`/`factory.py` (mirrors `core/llm/embedding/` exactly), `providers/qdrant.py:QdrantVectorStore` (lazy `qdrant_client` import; creates the collection + keyword payload indexes for all 13 planned filter fields on first use if the collection doesn't exist yet).
+- Added `qdrant-client` dependency (`uv add`, resolved cleanly, 8 new packages incl. `grpcio`).
+- Added a `qdrant` service to `docker-compose.yml` (`qdrant/qdrant:latest`, port 6333, named volume `qdrant_data`) and `QDRANT_URL=http://qdrant:6333` to the `app` service's environment.
+- Added `Settings.VECTOR_STORE_PROVIDER` (default `"qdrant"`), `QDRANT_URL` (default `http://localhost:6333`), `QDRANT_API_KEY` (optional), `QDRANT_COLLECTION` (default `"case_knowledge_chunks"`) to `settings/config.py`.
+- **Could not update `.env.example`** — that path is outside this session's file-write permissions (denied when reading/editing it). The four new `Settings` vars above still need to be added there manually.
+- Added `tests/core/vectorstore/test_qdrant_store.py` (7 tests, mocks `qdrant_client.QdrantClient` directly — no real Qdrant instance needed): collection creation when missing vs. skipped when present, batched upsert (+ empty-list no-op), search enforces the mandatory `agency` filter and correctly adds optional `case_record_id`/`source_type` conditions, filtered delete. All 50 tests in the repo pass (`uv run pytest`).
+- Updated `PLAN.md`'s Phase A section: A1 marked done with full detail of what was actually built (vs. the original A1 bullet's proposal); A2 marked deferred with the dual-write rationale; A3 rewritten to describe dual-write behavior instead of cutover; terminology and LLM-default open items marked confirmed.
+
+**Decisions made (asked via AskUserQuestion, all five resolved this session):** see list above — terminology, dependency/compose approval, A2 deferral, dual-write mode, LLM default.
+
+**New open questions:**
+- `.env.example` needs the four new vars added by the user (or a follow-up session with the right permissions).
+- No real Qdrant instance has been run against yet — `docker compose up qdrant` + a smoke test (`get_vector_store().upsert_points(...)` then `.search(...)`) against a live container is still open before A3 can be trusted end-to-end.
+- Dual-write means `Settings.EMBEDDING_DIM`/vector width must stay reconciled between the two stores (unchanged risk, not new) — no action needed unless the embedding model changes.
+
+**Next concrete action:**
+- A3: wire dual-write into `CaseIngestionService.ingest_case`/`reindex_case`/`delete_case_index` (`modules/embedding/ingestion_service.py`) — add a best-effort `get_vector_store().upsert_points(...)` call per entity after the existing Postgres write commits, and `get_vector_store().delete_by_filter(...)` in `delete_case_index`. A Qdrant failure must not fail the Postgres-side ingestion (mirrors the existing per-entity failure isolation pattern) — record `source_metadata["vector_sync"] = "failed"` on failure.
+- Before trusting A3, smoke-test against a real local Qdrant (`docker compose up qdrant`) rather than only the mocked unit tests above.
+- Then A4 (`modules/embedding/retrieval.py`) and A5 (`core/llm/generation/` + chat router/controller), per `PLAN.md`'s Phase A rollout order (A7).
+
+---
+
+## 2026-09-26 — Session: architectural evolution decided (Qdrant + multi-agent RAG) — planning only, no code changed
+
+**Done this session:**
+- User requested a major architectural evolution via a detailed pasted spec: move vector storage from pgvector to **Qdrant**, replace the (never-built) single-path retrieval with a **3-agent LangGraph system** (Case Details / Procedural Hearings / Financial Details) behind an orchestrator, add **DeepEval** as a first-class evaluation system, and apply broad production-engineering hardening.
+- Ran a full read-only exploration (3 parallel Explore agents) of the embedding/chunking/projector subsystems, router/controller/tenant/DB infra, and tests/ingestion/migrations before proposing anything — confirmed against the real repo, not assumed from `PLAN.md`/this file alone.
+- Key findings from that exploration (see `PLAN.md`'s new "Architectural Evolution" section for the full writeup):
+  - **No retrieval module, no answer-generation endpoint, no chat/query/agent code exists anywhere.** `routers/` has exactly one file (`ingestion_router.py`). The app currently stops at ingestion — this is the biggest actual gap, more fundamental than "pgvector vs Qdrant."
+  - `langgraph`, `langgraph-supervisor`, `langgraph-checkpoint-postgres`, `langchain-core`, `anthropic`, `openai` are **already in `pyproject.toml`/`uv.lock` but completely unused** — clean slate for agent orchestration, not a refactor.
+  - `qdrant-client` and `deepeval` are not present anywhere — genuinely new dependencies for their respective phases.
+  - No vector-store abstraction exists — `pgvector`/`Vector(EMBEDDING_DIM)` is hardcoded directly into `AIKnowledgeChunk`; the embedding-*computation* abstraction (`core/llm/embedding/`) is clean and store-agnostic already, but nothing separates "compute" from "store/query."
+  - Confirmed `EMBEDDING_DIM` is now `768` in both `Settings` and the model (the 1536→768 migration mentioned in earlier entries below has landed, even though no checkpoint entry explicitly recorded it).
+  - No `conftest.py`/fixtures/`pytest-asyncio` anywhere — every test hand-rolls fakes and runs async code via bare `asyncio.run(...)`. Any new test in this evolution should match.
+  - Two doc/code drifts spotted in passing (not fixed, not blocking): `CLAUDE.md` §24's `reset_sequences()` doesn't exist anywhere in the code; `config.agencies`/`config.config`/`config.user`'s migration defines `Integer` PKs but the models declare `UUID` — no reconciling migration exists.
+- Wrote a full phased plan (Phase A–D) into `PLAN.md`'s new "Architectural Evolution (2026-09-26)" section — Phase A (vector-store abstraction + Qdrant cutover + retrieval + single-path chat endpoint) is the concrete next session's work; B (multi-agent)/C (DeepEval)/D (hardening) are sequenced after, each gated on the previous being validated against real data, per `CLAUDE.md` §12/§27.
+
+**Decisions made (asked via AskUserQuestion, all four resolved this session):**
+1. **Scope for this session: plan-only.** No application code, dependencies, or migrations changed — this session's deliverable is the `PLAN.md` roadmap and this entry, nothing else.
+2. **Qdrant hosting**: self-hosted via Docker Compose (new service alongside the existing Postgres/TimescaleDB container), not Qdrant Cloud — matches the existing local-dev pattern.
+3. **LLM provider**: pluggable Interface + Registry + Factory (mirrors `core/llm/embedding/`), default Anthropic, OpenAI as a second registered provider.
+4. **Pgvector transition: cut over, not dual-write.** `AIKnowledgeChunk.embedding` + its `diskann` index will be dropped in Phase A (approved `core/models/` change per `CLAUDE.md` §7) once Qdrant ingestion works — no dual-write/fallback period. Everything else on `AIKnowledgeSource`/`AIKnowledgeChunk` (content, hash, dedupe constraint, cascade, status, is_active) is kept.
+
+**New open questions:**
+- Terminology mapping flagged, not yet explicitly confirmed: the user's original spec says filter by `client_name` — this app has no "client" concept, so the plan maps that to the existing `agency` tenant field. Worth a one-line confirmation before Phase A's Qdrant payload schema is finalized, in case "client" was meant more specifically (e.g. a case party).
+- Phase B's agent tool boundaries, Phase C's eval metric specifics, and Phase D's hardening priorities are all deliberately left at lower detail in `PLAN.md` — each gets its own planning pass once the phase before it is validated, rather than speculatively designed now.
+
+**Next concrete action:**
+- Start Phase A (`PLAN.md`'s "Architectural Evolution" section, Phase A / A1–A7): `uv add qdrant-client` → add `qdrant` service to `docker-compose.yml` → Alembic migration dropping `AIKnowledgeChunk.embedding`/diskann index → build `core/vectorstore/` → `core/llm/generation/` → `modules/embedding/retrieval.py` → context builder → `chat_router.py`/`chat_controller.py` → re-run `backfill_embeddings.py` against local Postgres+Qdrant → manually spot-check retrieval against real cases from `data_ingestion/data/batch_1.json` before starting Phase B.
+
+---
+
 ## 2026-09-13 — Session: standardized router/controller pattern, RequestContext, unified ErrorResponse
 
 **Done this session (user-driven refactor of the router/controller built 2026-09-06, plus this session's own cleanup/docs):**

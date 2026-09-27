@@ -55,6 +55,25 @@ class Settings(BaseSettings):
         "or provider change is detected and triggers re-embedding",
     )
 
+    # Vector store
+    VECTOR_STORE_PROVIDER: str = Field(
+        default="qdrant",
+        description="Vector store provider to use: 'qdrant'",
+    )
+    QDRANT_URL: str = Field(
+        default="http://localhost:6333",
+        description="Qdrant base URL",
+    )
+    QDRANT_API_KEY: str | None = Field(
+        default=None, description="Qdrant API key (unset for local/self-hosted)"
+    )
+    QDRANT_COLLECTION_PREFIX: str = Field(
+        default="case_knowledge_chunks",
+        description="Prefix for per-agency Qdrant collections (collection-per-tenant: "
+        "each agency gets its own collection named '<prefix>__<agency>'), so vectors "
+        "are physically isolated per tenant rather than only payload-filtered",
+    )
+
     # Chunking
     CHUNKING_STRATEGY: str = Field(
         default="structured",
