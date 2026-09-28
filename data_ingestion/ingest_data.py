@@ -1,3 +1,15 @@
+"""Load case data JSON files into Postgres for one agency schema.
+
+Usage:
+    uv run python -m data_ingestion.ingest_data --agency <schema_name>
+
+`--agency` is required rather than assumed: schema names must never be
+hardcoded (`CLAUDE.md` §8), and `AgencyBase.metadata.schema` is `None` at
+the model level -- the real schema is only known at the DB/environment
+level (see `data_ingestion/backfill_embeddings.py`).
+"""
+
+import argparse
 import asyncio
 import json
 import uuid
@@ -11,7 +23,7 @@ from sqlalchemy import Date, DateTime, Numeric, Time
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from data_ingestion.db import engine
+from quick_chat_api.core.database.connections import get_async_engine
 from quick_chat_api.core.models.agency.agency import (
     AddressDetail,
     CaseAppearance,
@@ -254,13 +266,15 @@ async def ingest_file(conn: AsyncConnection, path: Path) -> None:
         print(f"  {table}: {inserted} inserted, {skipped} skipped (already present)")
 
 
-async def main() -> None:
+async def main(agency: str) -> None:
     files = sorted(DATA_DIR.glob("*.json"))
     if not files:
         print(f"No data files found in {DATA_DIR}")
         return
 
-    async with engine.begin() as conn:
+    engine = get_async_engine()
+    option_engine = engine.execution_options(schema_translate_map={None: agency})
+    async with option_engine.begin() as conn:
         for path in files:
             await ingest_file(conn, path)
 
@@ -269,4 +283,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--agency", required=True, help="Agency schema to ingest into")
+    args = parser.parse_args()
+    asyncio.run(main(args.agency))
