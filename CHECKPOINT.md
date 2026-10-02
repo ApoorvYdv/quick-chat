@@ -4,6 +4,30 @@ Living progress log for the work described in `PLAN.md`. Update this file at the
 
 ---
 
+## 2026-09-28 — Session: A4 done — `modules/embedding/retrieval.py` built
+
+**Done this session:**
+- Asked clarifying questions before building (`AskUserQuestion`): confirmed the vector backend is the existing `VectorStore` interface (Qdrant, not pgvector directly); confirmed this phase builds the retrieval *module* only, no HTTP endpoint yet, since the user's actual end goal is a LangGraph multi-agent chatbot (matches PLAN.md's existing Phase A/B split); confirmed generation (`core/llm/generation/`) is out of scope for this session; confirmed structured-vs-vector routing logic is **not** built now — it stays deferred to Phase B's LangGraph agents, exactly as PLAN.md already specced A4/Phase B.
+- The user asked about routing retrieval paths using a technique they referred to as "JEV" (framed as "how mature companies are implementing this new tech"). I don't recognize that term/acronym — asked the user to clarify or link it; they said it's a real term to look up but didn't supply a spelling/link. **Flagged as open, not resolved** — see below. Since routing is Phase B's job regardless of which technique it ends up using, this didn't block A4.
+- Built `src/quick_chat_api/modules/embedding/retrieval.py`:
+  - `retrieve(session, agency, query, *, case_record_id=None, source_types=None, top_k=20) -> list[RetrievedChunk]` — embeds the query (`get_embedding_provider().embed_query`), searches the tenant's Qdrant collection (`get_vector_store().search(...)` via `asyncio.to_thread`, mirroring A3's sync-SDK handling) with a `VectorFilter(case_record_id, source_types, status=COMPLETED, is_active=True)`, then hydrates full chunk content + its document's `source_type`/`source_table`/`source_id` from Postgres by id (`selectinload(AIKnowledgeChunk.document)`), preserving Qdrant's ranking order and dropping (not erroring on) any hit id no longer present in Postgres.
+  - `get_cases_by_number(session, case_number) -> list[CaseRecord]` — the "minimal structured-retrieval helper" A4 already called for: eager-loads parties/charges(+disposition/sanctions)/appearances/payments in one query. Returns a **list**, not one row — `case_number` has no DB-level uniqueness constraint, and `CLAUDE.md` §13 says don't silently pick one record when more than one could match.
+- Added `tests/modules/embedding/test_retrieval.py` (3 tests, same hand-rolled-fake/`asyncio.run` convention as the rest of the repo): empty vector-search hits short-circuit before ever touching Postgres; hydration re-sorts Postgres's (unordered) rows back into Qdrant's ranking order; a hit id missing from Postgres is silently dropped rather than raising. All 57 repo tests pass (`uv run pytest`), up from 54.
+- Updated `PLAN.md`: A4 marked `[x]` DONE with full implementation detail, Phase A status line now reads "(A1, A3, A4 done)", and a new paragraph under A4 records that routing logic was deliberately not built this session pending the "JEV" clarification.
+
+**Decisions made (asked via `AskUserQuestion`, all resolved this session):** VectorStore/Qdrant over pgvector-direct; module-only scope (no endpoint) this session; generation out of scope; no routing/classifier built into A4.
+
+**New open questions:**
+- **"JEV" is still unidentified.** The user wants to look it up before Phase B's routing design starts — get the actual term/spelling/link from them before designing Phase B's structured-vs-vector routing, rather than guessing at a technique.
+- `.env.example` still needs the vectorstore `Settings` vars added manually (carried over from A1, unchanged).
+- A4's `retrieve()`/`get_cases_by_number()` are unit-tested against mocks only — not yet run against a real Postgres + Qdrant instance with real ingested data (the A3 entry below already smoke-tested the *write* path against real Qdrant; the *read* path here hasn't been).
+
+**Next concrete action:**
+- Manually spot-check `retrieve()`/`get_cases_by_number()` against real ingested case data (real Postgres + the local Qdrant container from A3) before starting Phase B, per `CLAUDE.md` §12/§27 and `PLAN.md`'s A7 rollout order.
+- Get the "JEV" clarification from the user, then begin Phase B's node-by-node LangGraph design (orchestrator + Case Details/Procedural Hearings/Financial Details agents), which is where the structured-vs-vector routing decision actually belongs. A5 (context builder + `core/llm/generation/` + single-path chat endpoint) is still open too, per PLAN.md's A7 order — confirm with the user whether A5 or Phase B design comes next, since generation was explicitly deferred rather than skipped.
+
+---
+
 ## 2026-09-26 — Session: A3 done — dual-write wired into `CaseIngestionService`, smoke-tested against real Qdrant
 
 **Done this session:**
