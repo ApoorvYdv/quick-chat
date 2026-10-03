@@ -66,4 +66,7 @@ COPY --from=builder ${PROJECT_HOME}/src ./src
 
 EXPOSE 8000
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD ["/quick_chat_api/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3)"]
+
 CMD ["uv", "run", "--", "uvicorn", "quick_chat_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

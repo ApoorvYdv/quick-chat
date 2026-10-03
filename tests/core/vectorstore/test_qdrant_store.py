@@ -12,7 +12,9 @@ def _make_store() -> tuple[QdrantVectorStore, MagicMock]:
         client = MagicMock()
         client_cls.return_value = client
         store = QdrantVectorStore(
-            url="http://localhost:6333", collection_prefix="test_collection", vector_size=8
+            url="http://localhost:6333",
+            collection_prefix="test_collection",
+            vector_size=8,
         )
     return store, client
 
@@ -53,7 +55,9 @@ def test_different_agencies_map_to_different_collections():
     client.collection_exists.return_value = True
 
     store.upsert_points("acme", [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={})])
-    store.upsert_points("globex", [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={})])
+    store.upsert_points(
+        "globex", [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={})]
+    )
 
     collections = {c.kwargs["collection_name"] for c in client.upsert.call_args_list}
     assert collections == {"test_collection__acme", "test_collection__globex"}
@@ -63,9 +67,13 @@ def test_agency_name_is_sanitized_for_collection_name():
     store, client = _make_store()
     client.collection_exists.return_value = True
 
-    store.upsert_points("Acme PD!", [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={})])
+    store.upsert_points(
+        "Acme PD!", [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={})]
+    )
 
-    assert client.upsert.call_args.kwargs["collection_name"] == "test_collection__acme_pd"
+    assert (
+        client.upsert.call_args.kwargs["collection_name"] == "test_collection__acme_pd"
+    )
 
 
 def test_upsert_points_batches_in_one_call():
@@ -94,7 +102,9 @@ def test_search_scopes_to_the_agencys_collection():
     hit = MagicMock(id=str(uuid4()), score=0.9, payload={"source_type": "case"})
     client.query_points.return_value = MagicMock(points=[hit])
 
-    results = store.search("acme", query_vector=[0.1] * 8, filter_=VectorFilter(), top_k=5)
+    results = store.search(
+        "acme", query_vector=[0.1] * 8, filter_=VectorFilter(), top_k=5
+    )
 
     assert len(results) == 1
     assert results[0].score == 0.9
@@ -135,3 +145,20 @@ def test_delete_points_skips_empty_list_without_touching_collection():
     store.delete_points("acme", [])
     client.delete.assert_not_called()
     client.collection_exists.assert_not_called()
+
+
+def test_list_points_pages_through_scroll_until_offset_is_none():
+    store, client = _make_store()
+    client.collection_exists.return_value = True
+    first, second = uuid4(), uuid4()
+    client.scroll.side_effect = [
+        ([MagicMock(id=str(first), payload={"a": 1})], "next-page"),
+        ([MagicMock(id=str(second), payload=None)], None),
+    ]
+
+    points = store.list_points("acme", VectorFilter(case_record_id=uuid4()))
+
+    assert [p.id for p in points] == [first, second]
+    assert points[1].payload == {}
+    assert client.scroll.call_count == 2
+    assert client.scroll.call_args_list[0].kwargs["with_vectors"] is False

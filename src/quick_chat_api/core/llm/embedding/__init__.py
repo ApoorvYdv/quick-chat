@@ -7,9 +7,9 @@ from quick_chat_api.core.llm.embedding.exceptions import (
 from quick_chat_api.core.llm.embedding.factory import get_embedding_provider
 
 __all__ = [
+    "EmbeddingDimensionMismatchError",
     "EmbeddingProvider",
     "EmbeddingProviderError",
-    "EmbeddingDimensionMismatchError",
     "UnknownEmbeddingProviderError",
     "get_embedding_provider",
 ]

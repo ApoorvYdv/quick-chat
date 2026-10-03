@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from quick_chat_api.core.database.config import DatabaseConfig
 
 engine = create_engine(
-    DatabaseConfig().build_db_url(async_driver=False),
+    DatabaseConfig().build_db_url(),
 )
 
 

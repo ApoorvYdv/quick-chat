@@ -12,12 +12,12 @@ from quick_chat_api.core.vectorstore.exceptions import (
 from quick_chat_api.core.vectorstore.factory import get_vector_store
 
 __all__ = [
-    "VectorStore",
+    "UnknownVectorStoreError",
+    "VectorFilter",
     "VectorPoint",
     "VectorSearchResult",
-    "VectorFilter",
+    "VectorStore",
     "VectorStoreError",
-    "UnknownVectorStoreError",
     "VectorStoreOperationError",
     "get_vector_store",
 ]

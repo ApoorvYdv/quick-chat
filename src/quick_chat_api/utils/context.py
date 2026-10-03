@@ -1,9 +1,8 @@
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 from starlette_context import context
-
-from quick_chat_api.core.constants.constants import CaseTypes
 
 
 class UserDetails(BaseModel):
@@ -14,7 +13,7 @@ class UserDetails(BaseModel):
     is_super_admin: bool = False
     roles: list[str] = Field(default_factory=list)
     permissions: set[str] = Field(default_factory=set)
-    agency_user_id: int | None = None
+    agency_user_id: UUID | None = None
 
 
 class _RequestContext:
@@ -32,7 +31,6 @@ class _RequestContext:
         # Reading
         agency = RequestContext.agency
         user   = RequestContext.user_details
-        cfg    = RequestContext.config
 
         # Writing (typically in dependencies)
         RequestContext.agency = "some_agency"
@@ -42,42 +40,33 @@ class _RequestContext:
 
     @property
     def agency(self) -> str:
-        return context.get("agency", "")
+        return context.get("agency", "") if context.exists() else ""
 
     @agency.setter
     def agency(self, value: str) -> None:
         context.update({"agency": value})
 
-    # ── config ──────────────────────────────────────────────────────
-
-    @property
-    def config(self) -> dict[str, dict[str, Any]]:
-        return context.get("config") or {}
-
-    @config.setter
-    def config(self, value: dict[str, dict[str, Any]]) -> None:
-        context.update({"config": value})
-
     # ── user_details ────────────────────────────────────────────────
 
     @property
     def user_details(self) -> UserDetails:
-        raw: dict[str, Any] = context.get("user_details") or {}
+        stored = context.get("user_details") if context.exists() else None
+        raw: dict[str, Any] = stored or {}
         return UserDetails(**raw)
 
     @user_details.setter
     def user_details(self, value: UserDetails) -> None:
         context.update({"user_details": value.model_dump()})
 
-    # ── case_types ──────────────────────────────────────────────────
+    # ── timezone ────────────────────────────────────────────────────
 
     @property
-    def case_types(self) -> list[CaseTypes] | None:
-        return context.get("case_types")
+    def timezone(self) -> str | None:
+        return context.get("timezone") if context.exists() else None
 
-    @case_types.setter
-    def case_types(self, value: list[CaseTypes] | None) -> None:
-        context.update({"case_types": value})
+    @timezone.setter
+    def timezone(self, value: str | None) -> None:
+        context.update({"timezone": value})
 
 
 RequestContext = _RequestContext()

@@ -1,88 +1,73 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
-from quick_chat_api.core.vectorstore.base import VectorSearchResult
+import pytest
+
+from quick_chat_api.core.vectorstore.base import VectorPoint
+from quick_chat_api.modules.embedding import retrieval
 from quick_chat_api.modules.embedding.retrieval import retrieve
+from tests.fakes import FakeEmbeddingProvider
 
 
-def _chunk(chunk_id, source_type="charge", source_table="case_charge", source_id="1"):
-    document = MagicMock()
-    document.source_type = source_type
-    document.source_table = source_table
-    document.source_id = source_id
-
-    chunk = MagicMock()
-    chunk.id = chunk_id
-    chunk.content = f"content-{chunk_id}"
-    chunk.document = document
-    chunk.case_record_id = uuid4()
-    chunk.document_id = uuid4()
-    chunk.chunk_index = 0
-    chunk.metadata_ = {}
-    return chunk
-
-
-def _session_with_chunks(chunks: list) -> AsyncMock:
-    result = MagicMock()
-    result.scalars.return_value.all.return_value = chunks
-    session = AsyncMock()
-    session.execute.return_value = result
-    return session
+def _point(
+    case_id: UUID, text: str, embedding: FakeEmbeddingProvider, source_type="charge"
+):
+    return VectorPoint(
+        id=uuid4(),
+        vector=embedding.embed_query(text),
+        payload={
+            "content": text,
+            "source_type": source_type,
+            "source_table": "case_charge",
+            "source_id": text,
+            "case_record_id": str(case_id),
+            "chunk_index": 0,
+            "chunk_metadata": {"k": "v"},
+        },
+    )
 
 
-def test_retrieve_returns_empty_without_querying_postgres_when_no_hits():
-    session = AsyncMock()
-    with (
-        patch("quick_chat_api.modules.embedding.retrieval.get_embedding_provider") as get_provider,
-        patch("quick_chat_api.modules.embedding.retrieval.get_vector_store") as get_store,
-    ):
-        get_provider.return_value.embed_query.return_value = [0.1]
-        get_store.return_value.search.return_value = []
-
-        result = asyncio.run(retrieve(session, "acme", "what happened"))
-
-    assert result == []
-    session.execute.assert_not_called()
+@pytest.fixture(autouse=True)
+def _wire(monkeypatch, fake_embedding, fake_vector_store):
+    monkeypatch.setattr(retrieval, "get_embedding_provider", lambda: fake_embedding)
+    monkeypatch.setattr(retrieval, "get_vector_store", lambda: fake_vector_store)
 
 
-def test_retrieve_hydrates_and_preserves_qdrant_ranking_order():
-    first_id, second_id = uuid4(), uuid4()
-    hits = [
-        VectorSearchResult(id=first_id, score=0.9, payload={}),
-        VectorSearchResult(id=second_id, score=0.5, payload={}),
-    ]
-    # Postgres returns them out of ranking order; retrieve() must re-sort by hit order.
-    session = _session_with_chunks([_chunk(second_id), _chunk(first_id)])
+def test_returns_payload_content_ranked_by_similarity(
+    fake_embedding, fake_vector_store
+) -> None:
+    case_id = uuid4()
+    fake_vector_store.upsert_points(
+        "acme", [_point(case_id, t, fake_embedding) for t in ("alpha", "beta", "gamma")]
+    )
 
-    with (
-        patch("quick_chat_api.modules.embedding.retrieval.get_embedding_provider") as get_provider,
-        patch("quick_chat_api.modules.embedding.retrieval.get_vector_store") as get_store,
-    ):
-        get_provider.return_value.embed_query.return_value = [0.1]
-        get_store.return_value.search.return_value = hits
+    hits = asyncio.run(retrieve("acme", "beta", top_k=3))
 
-        result = asyncio.run(retrieve(session, "acme", "what happened"))
-
-    assert [chunk.id for chunk in result] == [first_id, second_id]
-    assert result[0].score == 0.9
-    assert result[0].source_type == "charge"
+    assert hits[0].content == "beta"
+    assert hits[0].case_record_id == case_id
+    assert hits[0].metadata == {"k": "v"}
+    assert [h.score for h in hits] == sorted((h.score for h in hits), reverse=True)
 
 
-def test_retrieve_drops_hits_missing_from_postgres():
-    hit_id = uuid4()
-    hits = [VectorSearchResult(id=hit_id, score=0.9, payload={})]
-    session = _session_with_chunks([])
+def test_empty_when_no_hits() -> None:
+    assert asyncio.run(retrieve("acme", "anything")) == []
 
-    with (
-        patch("quick_chat_api.modules.embedding.retrieval.get_embedding_provider") as get_provider,
-        patch("quick_chat_api.modules.embedding.retrieval.get_vector_store") as get_store,
-    ):
-        get_provider.return_value.embed_query.return_value = [0.1]
-        get_store.return_value.search.return_value = hits
 
-        result = asyncio.run(retrieve(session, "acme", "what happened"))
+def test_case_filter_applies_server_side(fake_embedding, fake_vector_store) -> None:
+    mine, other = uuid4(), uuid4()
+    fake_vector_store.upsert_points(
+        "acme",
+        [_point(mine, "mine", fake_embedding), _point(other, "other", fake_embedding)],
+    )
 
-    assert result == []
+    hits = asyncio.run(retrieve("acme", "mine", case_record_id=mine))
+
+    assert {h.content for h in hits} == {"mine"}
+
+
+def test_other_agency_never_sees_hits(fake_embedding, fake_vector_store) -> None:
+    fake_vector_store.upsert_points("acme", [_point(uuid4(), "secret", fake_embedding)])
+
+    assert asyncio.run(retrieve("globex", "secret")) == []

@@ -18,7 +18,8 @@ class EntityIngestionOutcomeResponse(BaseModel):
     kind: IngestionOutcomeKind
     chunk_count: int = 0
     error: str | None = Field(
-        default=None, description="Error message when kind='failed', never entity content"
+        default=None,
+        description="Error message when kind='failed', never entity content",
     )
 
 

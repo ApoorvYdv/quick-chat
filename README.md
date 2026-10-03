@@ -1,7 +1,7 @@
 # Quick Chat
 
 A RAG backend for querying court/case data in natural language. FastAPI +
-PostgreSQL (Tiger Cloud) as the source of truth, pgvector/Qdrant for
+PostgreSQL (Tiger Cloud) as the source of truth, Qdrant for
 semantic retrieval, LLM for grounded answer generation. See `CLAUDE.md` for
 the full architecture and engineering rules.
 
@@ -16,6 +16,8 @@ cp .env.example .env   # then fill in the values below
 
 | Variable | Description |
 |---|---|
+| `LOG_LEVEL` | Log level (default `INFO`); logs are JSON on stdout, never containing case content |
+| `DEFAULT_TIMEZONE` | IANA timezone used when an agency has no `localization`/`timezone` row in `config.config` (default `America/Denver`) |
 | `DB_USERNAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME` | Postgres (Tiger Cloud) connection |
 | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW` | SQLAlchemy async connection pool sizing |
 | `AWS_S3_BUCKET` | S3 bucket used for file storage |
@@ -29,8 +31,12 @@ if you add a new `Settings` field, add it there too.
 ## Running the API
 
 ```bash
+docker compose up -d postgres_db qdrant   # healthchecked dependencies
 uv run fastapi dev src/quick_chat_api/main.py
 ```
+
+`GET /healthz` is liveness (no dependencies); `GET /readyz` checks Postgres and
+Qdrant and returns `503 {"status": "unavailable"}` on failure (details only in logs).
 
 ## Data ingestion
 
@@ -68,8 +74,11 @@ in Postgres):
 uv run python -m data_ingestion.backfill_embeddings --agency <schema_name>
 ```
 
-## Tests
+## Tests and tooling
 
 ```bash
-uv run pytest
+uv run pytest                    # unit/component/API (no Docker)
+uv run pytest -m integration -n0 # contract tests, needs Docker (testcontainers)
+uv run ruff check . && uv run ruff format --check . && uv run mypy
+uv run pre-commit install        # same checks on commit
 ```

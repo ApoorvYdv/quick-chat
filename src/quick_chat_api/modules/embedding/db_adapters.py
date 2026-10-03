@@ -5,12 +5,10 @@ Loads business entities from PostgreSQL (tenant-scoped via the caller's
 in `projectors/providers/` needs, and hands each entity to its projector via
 `get_projector(...)`.
 
-Read-only by design: this module never touches `ai_knowledge_source` /
-`ai_knowledge_chunk` and never computes a `content_hash`. Hashing, the
-unchanged-skip decision, and all knowledge-table writes belong to the
-ingestion service (`PLAN.md` §11) so that the DB read transaction, the
-embedding API call, and the knowledge-table write transaction stay on
-separate sides of the boundary in `PLAN.md` §9.
+Read-only by design: this module never writes and never computes a
+`content_hash`. Hashing, the unchanged-skip decision and the vector-store
+writes belong to the ingestion service, so the DB read transaction is closed
+before the embedding API call.
 """
 
 from __future__ import annotations
@@ -41,10 +39,9 @@ class CaseNotFoundError(RuntimeError):
 class DiscoveredEntity:
     """One projected candidate, awaiting hashing/persistence by the ingestion service.
 
-    `source_table` + `source_id` + `source_type` mirror the columns backing
-    `ai_knowledge_source`'s dedupe unique constraint, so the ingestion
-    service can look up any prior row for this entity without re-deriving
-    identity from the projected content.
+    `source_table` + `source_id` + `source_type` identify the entity, so the
+    ingestion service can find its previously indexed points without
+    re-deriving identity from the projected content.
     """
 
     source_type: str
@@ -192,9 +189,7 @@ class CaseKnowledgeSourceAdapter:
             source_table="case_charge",
             source_id=str(charge.id),
             case_record_id=charge.case_record_id,
-            document=get_projector(AIKnowledgeSourceType.CHARGE.value).project(
-                charge
-            ),
+            document=get_projector(AIKnowledgeSourceType.CHARGE.value).project(charge),
         )
 
     def _project_appearance(self, appearance: CaseAppearance) -> DiscoveredEntity:

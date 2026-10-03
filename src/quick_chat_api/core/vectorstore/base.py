@@ -22,7 +22,7 @@ from uuid import UUID
 @dataclass(frozen=True)
 class VectorPoint:
     """One vector + its filterable payload, keyed by the same id as its
-    source-of-record row (e.g. `AIKnowledgeChunk.id`)."""
+    deterministic per entity chunk."""
 
     id: UUID
     vector: list[float]
@@ -39,6 +39,14 @@ class VectorSearchResult:
 
 
 @dataclass(frozen=True)
+class StoredPoint:
+    """A stored point's id and payload, without its vector."""
+
+    id: UUID
+    payload: dict[str, Any]
+
+
+@dataclass(frozen=True)
 class VectorFilter:
     """Payload-equality filter applied server-side alongside the ANN search,
     scoped within a single agency's collection (see `agency` on each method
@@ -46,8 +54,6 @@ class VectorFilter:
 
     case_record_id: UUID | None = None
     source_types: list[str] | None = None
-    status: str | None = None
-    is_active: bool | None = None
 
 
 class VectorStore(ABC):
@@ -66,6 +72,11 @@ class VectorStore(ABC):
         """Delete every point in `agency`'s collection matching `filter_`."""
 
     @abstractmethod
+    def list_points(self, agency: str, filter_: VectorFilter) -> list[StoredPoint]:
+        """Return every point (id + payload, no vector) in `agency`'s collection
+        matching `filter_`, filtered server-side."""
+
+    @abstractmethod
     def search(
         self,
         agency: str,
@@ -81,3 +92,7 @@ class VectorStore(ABC):
         isolation itself comes from `agency` selecting a dedicated
         collection -- never from a payload condition alone.
         """
+
+    @abstractmethod
+    def ping(self) -> None:
+        """Raise `VectorStoreError` if the backend is unreachable."""

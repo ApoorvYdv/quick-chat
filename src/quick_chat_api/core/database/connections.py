@@ -9,12 +9,15 @@ class AsyncDatabaseSession:
     max_overflow = settings.DB_MAX_OVERFLOW
 
     engine = create_async_engine(
-        DatabaseConfig().build_db_url(async_driver=True),
+        DatabaseConfig().build_db_url(),
         pool_size=pool_size,
         max_overflow=max_overflow,
         pool_recycle=3600,  # Testing arguments might be removed if we see performance degradation
         pool_use_lifo=True,  # Testing arguments might be removed if we see performance degradation
         pool_pre_ping=True,  # Testing arguments might be removed if we see performance degradation
+        # psycopg returns rowcount -1 for Core DML unless preserved; asyncpg
+        # did not need this, and data_ingestion/ingest_data.py relies on it.
+        execution_options={"preserve_rowcount": True},
     )
 
     def __call__(self):

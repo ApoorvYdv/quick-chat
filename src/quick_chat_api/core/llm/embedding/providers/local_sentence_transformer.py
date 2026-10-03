@@ -51,7 +51,7 @@ class LocalSentenceTransformerProvider(EmbeddingProvider):
             raise EmbeddingDimensionMismatchError(
                 f"Model '{model_name}' outputs {actual_dimension}-dim vectors, "
                 f"but EMBEDDING_DIM is configured as {expected_dimension}. "
-                "Update EMBEDDING_DIM (and the ai_knowledge_chunk vector column "
+                "Update EMBEDDING_DIM (and the vector store collection "
                 "width) to match, or choose a different model."
             )
         self._dimension = actual_dimension

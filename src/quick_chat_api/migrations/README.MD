@@ -53,11 +53,11 @@ Each migration environment has its **own Alembic configuration**.
 
 # Usage Procedure
 
-Install Python 3.12.4 using pyenv and instruct the project to use it:
+Install Python 3.14 using pyenv and instruct the project to use it:
 
 ```bash
-pyenv install 3.12.4
-pyenv local 3.12.4
+pyenv install 3.14
+pyenv local 3.14
 ```
 
 Create a virtual environment and install dependencies using **uv**:

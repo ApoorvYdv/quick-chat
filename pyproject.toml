@@ -13,14 +13,11 @@ dependencies = [
     "uuid-utils>=0.17.0",
     "greenlet>=3.5.5",
     "alembic>=1.19.2",
-    "pgvector>=0.5.0",
     "fastapi>=0.141.1",
     "aioboto3>=15.5.0",
-    "psycopg2-binary>=2.9.12",
     "gunicorn>=26.2.0",
     "uvicorn[standard]>=0.52.4",
     "pydantic-settings>=2.15.0",
-    "asyncpg>=0.31.0",
     "sentence-transformers>=6.0.1",
     "torch>=2.2",
     "starlette-context>=0.5.1",
@@ -31,6 +28,7 @@ dependencies = [
     "anthropic>=1.5.0",
     "openai>=3.13.0",
     "qdrant-client>=1.19.1",
+    "structlog>=26.1.0",
 ]
 
 [build-system]
@@ -64,25 +62,55 @@ explicit = true
 
 [tool.ruff]
 line-length = 88
-extend-exclude = []
+extend-exclude = ["src/quick_chat_api/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "S", "SIM", "RUF"]
+# E501: the formatter owns line length. UP042/UP046: str-enum and PEP 695
+# modernizations deferred; not worth churning stable constants/models here.
+ignore = ["E501", "UP042", "UP046"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106"]
 
 [tool.ruff.format]
 quote-style = "double" # Optional, black-like style
 
 [tool.mypy]
 files = ["src"]
-exclude = ["quick_chat_api.migrations"]
+mypy_path = "src"
+explicit_package_bases = true
+exclude = ["quick_chat_api/migrations"]
+ignore_missing_imports = true
+
+# hybrid_property's expression setter intentionally redefines the name.
+[[tool.mypy.overrides]]
+module = "quick_chat_api.core.models.*"
+disable_error_code = ["no-redef"]
 
 [tool.pytest.ini_options]
-addopts = "-n auto"
+addopts = "-n auto -m 'not integration'"
+markers = ["integration: needs Docker (Postgres/Qdrant via testcontainers); run with -m integration"]
+asyncio_mode = "auto"
 pythonpath = ["src", "."]
 testpaths = ["tests"]
 
 [dependency-groups]
 dev = [
+    "bandit>=1.9.4",
+    "mypy>=2.4.0",
+    "pip-audit>=2.10.1",
+    "pre-commit>=4.6.2",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
     "pytest-xdist>=3.8.0",
+    "ruff>=0.16.10",
+    "testcontainers>=4.15.0",
 ]
 
 [project.scripts]
 migrate = "quick_chat_api.migrations.run_migrations:main"
+
+[tool.bandit]
+exclude_dirs = ["tests", "src/quick_chat_api/migrations"]

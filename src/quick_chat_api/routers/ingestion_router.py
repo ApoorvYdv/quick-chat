@@ -40,7 +40,9 @@ async def reindex_case(
     try:
         result = await controller.reindex_case(case_id, force=force)
     except ingestion_controller.CaseNotFoundControllerError as exc:
-        raise HTTPException(status_code=404, detail=ErrorResponse.CASE_NOT_FOUND) from exc
+        raise HTTPException(
+            status_code=404, detail=ErrorResponse.CASE_NOT_FOUND
+        ) from exc
     return CaseIngestionResponse.from_result(result)
 
 

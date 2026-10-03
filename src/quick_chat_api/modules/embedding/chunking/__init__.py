@@ -8,8 +8,8 @@ from quick_chat_api.modules.embedding.chunking.factory import get_chunker
 __all__ = [
     "Chunk",
     "Chunker",
-    "SplitReason",
     "ChunkingError",
+    "SplitReason",
     "UnknownChunkerError",
     "get_chunker",
 ]

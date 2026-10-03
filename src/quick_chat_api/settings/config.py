@@ -7,6 +7,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings from environment variables."""
 
+    # Logging
+    LOG_LEVEL: str = Field(default="INFO", description="Application log level")
+
+    DEFAULT_TIMEZONE: str = Field(
+        default="America/Denver",
+        description="IANA timezone used when an agency has no localization.timezone config",
+    )
+
     # Database
     DB_USERNAME: str = Field(description="Database username")
     DB_PASSWORD: str = Field(description="Database password")
@@ -35,7 +43,7 @@ class Settings(BaseSettings):
     EMBEDDING_DIM: int = Field(
         default=768,
         description="Output dimensionality of the configured embedding model; "
-        "must match the pgvector column width in ai_knowledge_chunk",
+        "must match the vector store collection dimension",
         gt=0,
     )
     EMBEDDING_BATCH_SIZE: int = Field(
@@ -112,7 +120,7 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]  # fields come from the environment
 
 
 # Convenience instance

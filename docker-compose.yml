@@ -1,7 +1,7 @@
 services:
   # This service runs the postgres DB used by fastapi app server
-  # Uses Timescale's image (bundles timescaledb, pgvector, pgvectorscale)
-  # so local dev matches the extensions available on Tiger Cloud.
+  # Uses Timescale's image so local dev matches the extensions available on
+  # Tiger Cloud.
   postgres_db:
     image: timescale/timescaledb-ha:pg18-oss
     environment:
@@ -23,11 +23,24 @@ services:
   # Vector index for AI-knowledge chunks. Postgres remains the system of
   # record (content/lineage); Qdrant only holds embeddings + filter payload.
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.19.1
     ports:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
+    # The image ships no curl/wget; probe /readyz over bash's /dev/tcp.
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - >-
+          exec 3<>/dev/tcp/localhost/6333 &&
+          printf 'GET /readyz HTTP/1.0\r\n\r\n' >&3 &&
+          head -n1 <&3 | grep -q ' 200 '
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - court-cms-net
 
@@ -53,7 +66,10 @@ services:
       AWS_DEFAULT_REGION: ap-south-1
     # command: [ "uv", "run", "--", "gunicorn", "quick_chat_api.main:app", "--workers=4", "--worker-class=quick_chat_api.workers.RestartableUvicornWorker", "--bind=0.0.0.0:8000", "--access-logfile=-", "--reload", "--log-level=debug" ]
     depends_on:
-      - postgres_db
+      postgres_db:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
     volumes:
       - ./src/quick_chat_api:/quick_chat_api/src/quick_chat_api
       - ./tests:/quick_chat_api/tests

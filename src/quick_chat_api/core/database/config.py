@@ -17,14 +17,12 @@ class DatabaseConfig:
         self.db_port = settings.DB_PORT
         self.db_name = settings.DB_NAME
 
-    def build_db_url(self, async_driver: bool = False) -> URL:
-        driver: str
-        if not async_driver:
-            driver = "postgresql"
-        else:
-            driver = "postgresql+asyncpg"
+    def build_db_url(self) -> URL:
+        # psycopg 3 serves both sync (Alembic) and async (app) engines;
+        # SQLAlchemy picks the dialect flavor from create_engine vs
+        # create_async_engine.
         url_object = URL.create(
-            drivername=driver,
+            drivername="postgresql+psycopg",
             username=self.db_username,
             password=self.db_password,
             host=self.db_host,

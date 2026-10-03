@@ -67,4 +67,6 @@ def test_dimension_mismatch_raises(monkeypatch):
     )
 
     with pytest.raises(EmbeddingDimensionMismatchError):
-        LocalSentenceTransformerProvider(model_name="fake-model", expected_dimension=1536)
+        LocalSentenceTransformerProvider(
+            model_name="fake-model", expected_dimension=1536
+        )

@@ -75,7 +75,7 @@ Avoid N+1 queries.
 
 Use SQLAlchemy ORM/Core by default.
 
-Raw SQL is acceptable when PostgreSQL-specific behavior or pgvector functionality makes it appropriate.
+Raw SQL is acceptable when PostgreSQL-specific behavior makes it appropriate.
 
 Always parameterize values.
 

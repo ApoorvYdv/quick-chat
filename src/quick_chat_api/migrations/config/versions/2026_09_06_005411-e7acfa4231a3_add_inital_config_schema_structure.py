@@ -73,7 +73,9 @@ def upgrade() -> None:
 
     op.create_table(
         "agencies",
-        sa.Column("agency_id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "agency_id", sa.UUID(), server_default=sa.text("uuidv7()"), nullable=False
+        ),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("abbr", sa.String(), nullable=False),
         sa.Column("app_name", sa.String(), nullable=False),
@@ -111,7 +113,9 @@ def upgrade() -> None:
     )
     op.create_table(
         "config",
-        sa.Column("config_id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "config_id", sa.UUID(), server_default=sa.text("uuidv7()"), nullable=False
+        ),
         sa.Column("agency_name", sa.String(), nullable=True),
         sa.Column("config_section", sa.String(), nullable=True),
         sa.Column("config_key", sa.String(), nullable=True),
@@ -146,7 +150,9 @@ def upgrade() -> None:
     )
     op.create_table(
         "user",
-        sa.Column("user_id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column(
+            "user_id", sa.UUID(), server_default=sa.text("uuidv7()"), nullable=False
+        ),
         sa.Column("cognito_id", sa.Text(), nullable=False),
         sa.Column("first_name", sa.Text(), nullable=True),
         sa.Column("last_name", sa.Text(), nullable=False),

@@ -20,6 +20,7 @@ from typing import Any
 from uuid import UUID
 
 from quick_chat_api.core.vectorstore.base import (
+    StoredPoint,
     VectorFilter,
     VectorPoint,
     VectorSearchResult,
@@ -38,15 +39,14 @@ _INDEXED_PAYLOAD_FIELDS = (
     "source_type",
     "source_table",
     "source_id",
-    "document_id",
     "chunk_index",
-    "status",
-    "is_active",
     "embedding_model",
     "embedding_version",
     "chunking_strategy",
     "chunking_version",
 )
+
+_SCROLL_PAGE_SIZE = 256
 
 _NON_COLLECTION_CHARS = re.compile(r"[^a-z0-9_-]+")
 
@@ -95,7 +95,7 @@ class QdrantVectorStore(VectorStore):
                 self._client.create_payload_index(
                     collection_name=collection,
                     field_name=field_name,
-                    field_schema="keyword",
+                    field_schema=qmodels.PayloadSchemaType.KEYWORD,
                 )
         self._ensured_collections.add(collection)
 
@@ -120,20 +120,13 @@ class QdrantVectorStore(VectorStore):
                     key="source_type", match=qmodels.MatchAny(any=filter_.source_types)
                 )
             )
-        if filter_.status is not None:
-            must.append(
-                qmodels.FieldCondition(
-                    key="status", match=qmodels.MatchValue(value=filter_.status)
-                )
-            )
-        if filter_.is_active is not None:
-            must.append(
-                qmodels.FieldCondition(
-                    key="is_active",
-                    match=qmodels.MatchValue(value=filter_.is_active),
-                )
-            )
         return qmodels.Filter(must=must)
+
+    def ping(self) -> None:
+        try:
+            self._client.get_collections()
+        except Exception as exc:
+            raise VectorStoreOperationError(f"Qdrant ping failed: {exc}") from exc
 
     def upsert_points(self, agency: str, points: list[VectorPoint]) -> None:
         if not points:
@@ -180,6 +173,29 @@ class QdrantVectorStore(VectorStore):
                 f"Qdrant filtered delete failed: {exc}"
             ) from exc
 
+    def list_points(self, agency: str, filter_: VectorFilter) -> list[StoredPoint]:
+        collection = self._resolve_collection(agency)
+        points: list[StoredPoint] = []
+        offset = None
+        try:
+            while True:
+                records, offset = self._client.scroll(
+                    collection_name=collection,
+                    scroll_filter=self._build_filter(filter_),
+                    limit=_SCROLL_PAGE_SIZE,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+                points.extend(
+                    StoredPoint(id=UUID(str(r.id)), payload=r.payload or {})
+                    for r in records
+                )
+                if offset is None:
+                    return points
+        except Exception as exc:
+            raise VectorStoreOperationError(f"Qdrant scroll failed: {exc}") from exc
+
     def search(
         self,
         agency: str,
@@ -199,7 +215,9 @@ class QdrantVectorStore(VectorStore):
         except Exception as exc:
             raise VectorStoreOperationError(f"Qdrant search failed: {exc}") from exc
         return [
-            VectorSearchResult(id=UUID(str(hit.id)), score=hit.score, payload=hit.payload or {})
+            VectorSearchResult(
+                id=UUID(str(hit.id)), score=hit.score, payload=hit.payload or {}
+            )
             for hit in hits
         ]
 

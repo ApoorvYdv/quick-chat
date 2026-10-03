@@ -5,10 +5,6 @@ from sqlalchemy import event, literal, or_, true
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.orm import Session, with_loader_criteria
 
-# WARNING: Do NOT remove this import!
-# This import is required to register the @event.listens_for("after_flush")
-# hook for the ROA (Register of Actions) audit trail system.
-# Without it, automatic case history logging will silently fail.
 from quick_chat_api.core.models.agency.agency import AgencyBase
 from quick_chat_api.utils.common.logger import logger
 
@@ -90,7 +86,7 @@ def _add_is_active_filter(execute_state):
     return true()` breaks that: the list stops reaching the query, and whichever
     request compiles the criteria first fixes the exemption for every request
     after it — silently, process-wide, across all agencies. Both directions of
-    that failure are covered by tests/test_utils/test_is_active_filter.py.
+    that failure are covered by tests/core/database/test_is_active_filter.py.
     """
 
     if not execute_state.is_select or execute_state.is_relationship_load:

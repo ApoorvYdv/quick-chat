@@ -34,15 +34,15 @@ Use structured PostgreSQL queries for deterministic questions such as:
 - Dispositions
 - Sanctions
 
-Use pgvector semantic retrieval for questions requiring semantic understanding, summaries, or discovery.
+Use vector (Qdrant) semantic retrieval for questions requiring semantic understanding, summaries, or discovery.
 
 Do not force every question through vector search.
 
 When useful, combine structured retrieval and vector retrieval.
 
-## pgvector
+## Vector store (Qdrant)
 
-Vector searches must be scoped to the current agency/tenant.
+Vector searches must be scoped to the current agency/tenant (one collection per agency).
 
 Where applicable, also filter by:
 

@@ -1,44 +1,37 @@
-"""Ingestion service: discover -> hash/skip -> chunk -> embed -> persist.
+"""Ingestion service: discover -> hash/skip -> chunk -> embed -> upsert to Qdrant.
 
 Orchestrates `CaseKnowledgeSourceAdapter` (discovery/projection),
-`get_chunker()` (chunking), and `get_embedding_provider()` (embedding) into
-`ai_knowledge_source`/`ai_knowledge_chunk` writes, per `PLAN.md` §11.
+`get_chunker()` (chunking), `get_embedding_provider()` (embedding) and
+`get_vector_store()` (the only place chunks are stored; Postgres keeps just
+the source case rows).
 
-Two safety properties this module owns:
+Properties this module owns:
 
-- **Transaction/embedding-call separation** (`PLAN.md` §9): case discovery
-  runs in one read session that is closed before any embedding-provider
-  call is made, and every write happens afterward in a single, separate
-  write session. No transaction is ever held open across the embedding
-  call.
-- **Per-entity failure isolation** (`CLAUDE.md` §19, `PLAN.md` §12): one
-  entity failing to chunk, embed, or persist does not abort the rest of
-  the case. It is recorded as a `FAILED` `ai_knowledge_source` row with
-  the error message (never entity content) in `source_metadata`, and its
-  last-known-good chunks (if any) are left untouched rather than deleted.
+- **No transaction across the embedding call**: case discovery runs in one
+  read session that is closed before any embedding-provider call is made.
+- **Per-entity failure isolation** (`CLAUDE.md` §19): one entity failing to
+  chunk, embed or upsert does not abort the rest of the case. It is reported
+  as a `FAILED` outcome (error message only, never entity content) and left
+  unindexed/unchanged, so the next run retries it.
+- **Idempotent re-indexing**: point ids are derived from the entity identity
+  and chunk index, so re-embedding overwrites in place. Skip detection reads
+  `content_hash`/`indexing_key`/`chunk_count` back from the stored payload.
 """
 
 from __future__ import annotations
 
 import asyncio
 import hashlib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import StrEnum
-from uuid import UUID
+from uuid import UUID, uuid5
 
-from sqlalchemy import delete, select, update
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
-from sqlalchemy.orm import selectinload
-from uuid_utils.compat import uuid7
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from quick_chat_api.core.constants.constants import AIKnowledgeStatus
 from quick_chat_api.core.database.session_context_manager import session_context
 from quick_chat_api.core.llm.embedding.base import EmbeddingProvider
 from quick_chat_api.core.llm.embedding.exceptions import EmbeddingProviderError
 from quick_chat_api.core.llm.embedding.factory import get_embedding_provider
-from quick_chat_api.core.models.agency.agency import AIKnowledgeChunk, AIKnowledgeSource
 from quick_chat_api.core.vectorstore.base import VectorFilter, VectorPoint
 from quick_chat_api.core.vectorstore.exceptions import VectorStoreError
 from quick_chat_api.core.vectorstore.factory import get_vector_store
@@ -63,27 +56,34 @@ __all__ = [
 
 _SourceKey = tuple[str, str, str]
 
+NAMESPACE_CHUNK = UUID("6f0c3a1e-8d57-4c0e-9a55-3f6f4b7d2c11")
+
 
 def _content_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _source_key(entity: DiscoveredEntity) -> _SourceKey:
+    return (entity.source_table, entity.source_id, entity.source_type)
+
+
+def _point_id(key: _SourceKey, chunk_index: int) -> UUID:
+    """Deterministic id: re-embedding the same chunk overwrites its point."""
+    return uuid5(NAMESPACE_CHUNK, ":".join((*key, str(chunk_index))))
+
+
 def _indexing_key(provider: EmbeddingProvider) -> str:
     """Fingerprint of "how" a document was indexed, not "what" it contains.
 
-    Stored in `source_metadata["indexing_key"]` and compared alongside
-    `content_hash` on the next run -- content can be byte-identical but
-    still need re-embedding if the model or chunking strategy changed.
+    Stored in each point's payload and compared alongside `content_hash` on
+    the next run -- content can be byte-identical but still need re-embedding
+    if the model or chunking strategy changed.
     """
     return f"{settings.EMBEDDING_PROVIDER}|{settings.EMBEDDING_MODEL}|{settings.EMBEDDING_VERSION}|{settings.CHUNKING_STRATEGY}|{settings.CHUNKING_VERSION}"
 
 
 class IngestionOutcomeKind(StrEnum):
-    """What happened to one discovered entity during a single `ingest_case` run.
-
-    Distinct from `AIKnowledgeStatus`: this is the in-memory run report
-    handed back to the caller, not the persisted lifecycle status.
-    """
+    """What happened to one discovered entity during a single `ingest_case` run."""
 
     EMBEDDED = "embedded"
     SKIPPED_UNCHANGED = "skipped_unchanged"
@@ -120,39 +120,18 @@ class CaseIngestionResult:
 
 
 @dataclass(frozen=True)
-class _ExistingSourceSnapshot:
+class _IndexedSnapshot:
+    """What the vector store currently holds for one entity."""
+
     content_hash: str | None
     indexing_key: str | None
-    status: str
-
-
-@dataclass(frozen=True)
-class _PreparedWrite:
-    entity: DiscoveredEntity
-    content_hash: str
-    chunks: list[Chunk]
-    vectors: list[list[float]]
-
-
-@dataclass
-class _VectorSyncBatch:
-    """Everything the post-commit Qdrant dual-write step needs, accumulated
-    across every entity persisted in one `_persist` call."""
-
-    source_keys: list[_SourceKey] = field(default_factory=list)
-    stale_chunk_ids: list[UUID] = field(default_factory=list)
-    points: list[VectorPoint] = field(default_factory=list)
-
-
-@dataclass(frozen=True)
-class _FailedWrite:
-    entity: DiscoveredEntity
-    content_hash: str | None
-    error: str
+    chunk_count: int
+    expected_chunk_count: int | None
+    point_ids: list[UUID]
 
 
 class CaseIngestionService:
-    """Runs the discover -> chunk -> embed -> persist pipeline for one case.
+    """Runs the discover -> chunk -> embed -> upsert pipeline for one case.
 
     Stateless aside from `engine`/`agency` -- a fresh instance per call (or
     reused across a batch within the same agency) both work.
@@ -171,70 +150,60 @@ class CaseIngestionService:
         return await self._run(case_id, force=True)
 
     async def delete_case_index(self, case_id: UUID) -> int:
-        """Soft-deletes every `ai_knowledge_source` row for `case_id`.
+        """Delete every indexed point for `case_id`.
 
-        Sets `status=DELETED` and `is_active=False`. The latter reuses the
-        project's existing global active-record filter (`CLAUDE.md` §9), so
-        future retrieval queries stop seeing these rows automatically,
-        without retrieval needing its own `status` check. Chunks are purged
-        outright -- they have no lifecycle independent of their document.
-
-        Returns the number of `ai_knowledge_source` rows soft-deleted.
+        Returns the number of distinct entities (sources) that were indexed.
         """
-        async with session_context(self._engine, self._agency) as session:
-            stmt = (
-                select(AIKnowledgeSource)
-                .where(AIKnowledgeSource.case_record_id == case_id)
-                .options(selectinload(AIKnowledgeSource.chunks))
-            )
-            result = await session.execute(stmt)
-            sources = result.scalars().all()
-            for source in sources:
-                source.status = AIKnowledgeStatus.DELETED.value
-                source.is_active = False
-                source.chunks.clear()
-            await session.commit()
-
+        store = get_vector_store()
+        filter_ = VectorFilter(case_record_id=case_id)
         try:
-            await asyncio.to_thread(
-                get_vector_store().delete_by_filter,
-                self._agency,
-                VectorFilter(case_record_id=case_id),
-            )
+            existing = await asyncio.to_thread(store.list_points, self._agency, filter_)
+            await asyncio.to_thread(store.delete_by_filter, self._agency, filter_)
         except VectorStoreError as exc:
             logger.error(
-                "vector store delete-by-filter failed",
-                extra={"agency": self._agency, "case_id": str(case_id), "error": str(exc)},
+                "vector store delete failed",
+                extra={
+                    "agency": self._agency,
+                    "case_id": str(case_id),
+                    "error": str(exc),
+                },
             )
-
-        return len(sources)
+            raise
+        return len({_payload_key(p.payload) for p in existing})
 
     async def _run(self, case_id: UUID, *, force: bool) -> CaseIngestionResult:
         provider = get_embedding_provider()
         chunker = get_chunker()
         indexing_key = _indexing_key(provider)
 
-        discovered, existing_by_key = await self._discover_and_load_existing(case_id)
+        async with session_context(self._engine, self._agency) as session:
+            discovered = await CaseKnowledgeSourceAdapter(session).discover_all(case_id)
+        try:
+            indexed = await self._load_indexed(case_id)
+        except VectorStoreError as exc:
+            logger.error(
+                "vector store read failed",
+                extra={
+                    "agency": self._agency,
+                    "case_id": str(case_id),
+                    "error": str(exc),
+                },
+            )
+            return CaseIngestionResult(
+                case_id=case_id,
+                outcomes=[_failed(e, str(exc)) for e in discovered],
+            )
 
-        prepared: list[_PreparedWrite] = []
-        failed: list[_FailedWrite] = []
         outcomes: list[EntityIngestionOutcome] = []
-
         for entity in discovered:
             content_hash = _content_hash(entity.document.content)
-            key: _SourceKey = (
-                entity.source_table,
-                entity.source_id,
-                entity.source_type,
-            )
-            existing = existing_by_key.get(key)
-
+            existing = indexed.get(_source_key(entity))
             if (
                 not force
                 and existing is not None
-                and existing.status == AIKnowledgeStatus.COMPLETED.value
                 and existing.content_hash == content_hash
                 and existing.indexing_key == indexing_key
+                and existing.chunk_count == existing.expected_chunk_count
             ):
                 outcomes.append(
                     EntityIngestionOutcome(
@@ -250,9 +219,12 @@ class CaseIngestionService:
                     entity.document.content, entity.document.metadata, provider
                 )
                 vectors = provider.embed_documents([c.content for c in chunks])
-            except (ChunkingError, EmbeddingProviderError) as exc:
+                await self._write(
+                    entity, content_hash, indexing_key, chunks, vectors, existing
+                )
+            except (ChunkingError, EmbeddingProviderError, VectorStoreError) as exc:
                 logger.error(
-                    "entity embedding failed",
+                    "entity indexing failed",
                     extra={
                         "case_id": str(case_id),
                         "source_type": entity.source_type,
@@ -260,301 +232,98 @@ class CaseIngestionService:
                         "error": str(exc),
                     },
                 )
-                failed.append(
-                    _FailedWrite(
-                        entity=entity, content_hash=content_hash, error=str(exc)
-                    )
-                )
+                outcomes.append(_failed(entity, str(exc)))
                 continue
 
-            prepared.append(
-                _PreparedWrite(
-                    entity=entity,
-                    content_hash=content_hash,
-                    chunks=chunks,
-                    vectors=vectors,
+            outcomes.append(
+                EntityIngestionOutcome(
+                    source_type=entity.source_type,
+                    source_id=entity.source_id,
+                    kind=IngestionOutcomeKind.EMBEDDED,
+                    chunk_count=len(chunks),
                 )
             )
-
-        outcomes.extend(await self._persist(case_id, prepared, failed, indexing_key))
         return CaseIngestionResult(case_id=case_id, outcomes=outcomes)
 
-    async def _discover_and_load_existing(
-        self, case_id: UUID
-    ) -> tuple[list[DiscoveredEntity], dict[_SourceKey, _ExistingSourceSnapshot]]:
-        async with session_context(self._engine, self._agency) as session:
-            adapter = CaseKnowledgeSourceAdapter(session)
-            discovered = await adapter.discover_all(case_id)
-
-            stmt = select(AIKnowledgeSource).where(
-                AIKnowledgeSource.case_record_id == case_id
+    async def _load_indexed(self, case_id: UUID) -> dict[_SourceKey, _IndexedSnapshot]:
+        points = await asyncio.to_thread(
+            get_vector_store().list_points,
+            self._agency,
+            VectorFilter(case_record_id=case_id),
+        )
+        grouped: dict[_SourceKey, list] = {}
+        for point in points:
+            grouped.setdefault(_payload_key(point.payload), []).append(point)
+        return {
+            key: _IndexedSnapshot(
+                content_hash=group[0].payload.get("content_hash"),
+                indexing_key=group[0].payload.get("indexing_key"),
+                chunk_count=len(group),
+                expected_chunk_count=group[0].payload.get("chunk_count"),
+                point_ids=[p.id for p in group],
             )
-            result = await session.execute(stmt)
-            existing_by_key = {
-                (
-                    row.source_table,
-                    row.source_id,
-                    row.source_type,
-                ): _ExistingSourceSnapshot(
-                    content_hash=row.content_hash,
-                    indexing_key=(row.source_metadata or {}).get("indexing_key"),
-                    status=row.status,
-                )
-                for row in result.scalars().all()
-            }
-        return discovered, existing_by_key
+            for key, group in grouped.items()
+        }
 
-    async def _persist(
+    async def _write(
         self,
-        case_id: UUID,
-        prepared: list[_PreparedWrite],
-        failed: list[_FailedWrite],
+        entity: DiscoveredEntity,
+        content_hash: str,
         indexing_key: str,
-    ) -> list[EntityIngestionOutcome]:
-        outcomes: list[EntityIngestionOutcome] = []
-        vector_batch = _VectorSyncBatch()
-        async with session_context(self._engine, self._agency) as session:
-            for item in prepared:
-                try:
-                    async with session.begin_nested():
-                        stale_ids, points = await self._write_embedded(
-                            session, item, indexing_key
-                        )
-                except SQLAlchemyError as exc:
-                    logger.error(
-                        "entity persistence failed",
-                        extra={
-                            "case_id": str(case_id),
-                            "source_type": item.entity.source_type,
-                            "source_id": item.entity.source_id,
-                            "error": str(exc),
-                        },
-                    )
-                    failed.append(
-                        _FailedWrite(
-                            entity=item.entity,
-                            content_hash=item.content_hash,
-                            error=str(exc),
-                        )
-                    )
-                    continue
-
-                vector_batch.source_keys.append(
-                    (item.entity.source_table, item.entity.source_id, item.entity.source_type)
-                )
-                vector_batch.stale_chunk_ids.extend(stale_ids)
-                vector_batch.points.extend(points)
-
-                outcomes.append(
-                    EntityIngestionOutcome(
-                        source_type=item.entity.source_type,
-                        source_id=item.entity.source_id,
-                        kind=IngestionOutcomeKind.EMBEDDED,
-                        chunk_count=len(item.chunks),
-                    )
-                )
-
-            for item in failed:
-                try:
-                    async with session.begin_nested():
-                        await self._write_failed(session, item)
-                except SQLAlchemyError as exc:
-                    # The FAILED-status write itself failed (e.g. the DB is
-                    # unreachable) -- still report the original embedding/
-                    # chunking error, since that's the actionable one; this
-                    # is logged separately so the write failure isn't lost.
-                    logger.error(
-                        "failed-status write itself failed",
-                        extra={
-                            "case_id": str(case_id),
-                            "source_type": item.entity.source_type,
-                            "source_id": item.entity.source_id,
-                            "error": str(exc),
-                        },
-                    )
-                outcomes.append(
-                    EntityIngestionOutcome(
-                        source_type=item.entity.source_type,
-                        source_id=item.entity.source_id,
-                        kind=IngestionOutcomeKind.FAILED,
-                        error=item.error,
-                    )
-                )
-
-            await session.commit()
-
-        await self._sync_vector_store(vector_batch)
-        return outcomes
-
-    async def _sync_vector_store(self, batch: _VectorSyncBatch) -> None:
-        """Best-effort dual-write to the vector store after the Postgres
-        transaction has already committed. Postgres is the source of truth;
-        a Qdrant failure here is logged and recorded via `vector_sync` in
-        `source_metadata`, never raised back to the caller."""
-        if not batch.source_keys:
-            return
-
-        vector_store = get_vector_store()
-        try:
-            if batch.stale_chunk_ids:
-                await asyncio.to_thread(
-                    vector_store.delete_points, self._agency, batch.stale_chunk_ids
-                )
-            await asyncio.to_thread(
-                vector_store.upsert_points, self._agency, batch.points
-            )
-            sync_status = "ok"
-        except VectorStoreError as exc:
-            logger.error(
-                "vector store dual-write failed",
-                extra={"agency": self._agency, "entity_count": len(batch.source_keys), "error": str(exc)},
-            )
-            sync_status = "failed"
-
-        await self._mark_vector_sync(batch.source_keys, sync_status)
-
-    async def _mark_vector_sync(
-        self, source_keys: list[_SourceKey], status: str
+        chunks: list[Chunk],
+        vectors: list[list[float]],
+        existing: _IndexedSnapshot | None,
     ) -> None:
-        async with session_context(self._engine, self._agency) as session:
-            for source_table, source_id, source_type in source_keys:
-                await session.execute(
-                    update(AIKnowledgeSource)
-                    .where(
-                        AIKnowledgeSource.source_table == source_table,
-                        AIKnowledgeSource.source_id == source_id,
-                        AIKnowledgeSource.source_type == source_type,
-                    )
-                    .values(
-                        source_metadata=AIKnowledgeSource.source_metadata.op("||")(
-                            {"vector_sync": status}
-                        )
-                    )
-                )
-            await session.commit()
-
-    async def _write_embedded(
-        self,
-        session: AsyncSession,
-        item: _PreparedWrite,
-        indexing_key: str,
-    ) -> tuple[list[UUID], list[VectorPoint]]:
-        source_id = await self._upsert_source(
-            session,
-            entity=item.entity,
-            content_hash=item.content_hash,
-            status=AIKnowledgeStatus.COMPLETED,
-            extra_metadata={"indexing_key": indexing_key},
-        )
-
-        stale_ids_result = await session.execute(
-            select(AIKnowledgeChunk.id).where(AIKnowledgeChunk.document_id == source_id)
-        )
-        stale_chunk_ids = list(stale_ids_result.scalars().all())
-
-        # Full replace rather than per-chunk upsert: re-chunking can change
-        # the chunk count, which would otherwise leave stale trailing chunks
-        # from a previous, larger split behind. Chunk ids are minted here
-        # (rather than relying on the model's flush-time default) so the
-        # same ids can be used as Qdrant point ids without an extra flush.
-        await session.execute(
-            delete(AIKnowledgeChunk).where(AIKnowledgeChunk.document_id == source_id)
-        )
-        chunk_ids = [uuid7() for _ in item.chunks]
-        session.add_all(
-            AIKnowledgeChunk(
-                id=chunk_id,
-                document_id=source_id,
-                case_record_id=item.entity.case_record_id,
-                chunk_index=chunk.index,
-                content=chunk.content,
-                content_hash=_content_hash(chunk.content),
-                token_count=chunk.token_count,
-                embedding=vector,
-                embedding_model=settings.EMBEDDING_MODEL,
-                embedding_version=settings.EMBEDDING_VERSION,
-                metadata_=chunk.metadata,
-            )
-            for chunk_id, chunk, vector in zip(
-                chunk_ids, item.chunks, item.vectors, strict=True
-            )
-        )
-
+        key = _source_key(entity)
         points = [
             VectorPoint(
-                id=chunk_id,
+                id=_point_id(key, chunk.index),
                 vector=vector,
                 payload={
-                    "case_record_id": str(item.entity.case_record_id),
-                    "source_type": item.entity.source_type,
-                    "source_table": item.entity.source_table,
-                    "source_id": item.entity.source_id,
-                    "document_id": str(source_id),
+                    "case_record_id": str(entity.case_record_id),
+                    "source_type": entity.source_type,
+                    "source_table": entity.source_table,
+                    "source_id": entity.source_id,
+                    "title": entity.document.title,
                     "chunk_index": chunk.index,
-                    "status": AIKnowledgeStatus.COMPLETED.value,
-                    "is_active": True,
+                    "chunk_count": len(chunks),
+                    "content": chunk.content,
+                    "chunk_metadata": chunk.metadata,
+                    "content_hash": content_hash,
+                    "indexing_key": indexing_key,
                     "embedding_model": settings.EMBEDDING_MODEL,
                     "embedding_version": settings.EMBEDDING_VERSION,
                     "chunking_strategy": settings.CHUNKING_STRATEGY,
                     "chunking_version": settings.CHUNKING_VERSION,
                 },
             )
-            for chunk_id, chunk, vector in zip(
-                chunk_ids, item.chunks, item.vectors, strict=True
-            )
+            for chunk, vector in zip(chunks, vectors, strict=True)
         ]
-        return stale_chunk_ids, points
+        store = get_vector_store()
+        await asyncio.to_thread(store.upsert_points, self._agency, points)
+        # Upsert first: a failure here leaves the old, still-retrievable
+        # points intact. Only trailing chunks from a previously larger split
+        # become stale.
+        new_ids = {p.id for p in points}
+        stale_ids = [
+            i for i in (existing.point_ids if existing else []) if i not in new_ids
+        ]
+        if stale_ids:
+            await asyncio.to_thread(store.delete_points, self._agency, stale_ids)
 
-    async def _write_failed(self, session: AsyncSession, item: _FailedWrite) -> None:
-        # Chunks are deliberately left untouched: a failed re-embed attempt
-        # should not destroy the last-known-good, still-retrievable index
-        # for this entity.
-        await self._upsert_source(
-            session,
-            entity=item.entity,
-            content_hash=item.content_hash,
-            status=AIKnowledgeStatus.FAILED,
-            extra_metadata={"error": item.error},
-        )
 
-    async def _upsert_source(
-        self,
-        session: AsyncSession,
-        *,
-        entity: DiscoveredEntity,
-        content_hash: str | None,
-        status: AIKnowledgeStatus,
-        extra_metadata: dict,
-    ) -> UUID:
-        document = entity.document
-        source_metadata = {**document.metadata, **extra_metadata}
-        stmt = (
-            pg_insert(AIKnowledgeSource)
-            .values(
-                case_record_id=entity.case_record_id,
-                source_type=entity.source_type,
-                source_table=entity.source_table,
-                source_id=entity.source_id,
-                title=document.title,
-                content_hash=content_hash,
-                source_metadata=source_metadata,
-                status=status.value,
-            )
-            .on_conflict_do_update(
-                index_elements=["source_table", "source_id", "source_type"],
-                set_={
-                    "case_record_id": entity.case_record_id,
-                    "title": document.title,
-                    "content_hash": content_hash,
-                    "source_metadata": source_metadata,
-                    "status": status.value,
-                    # Un-delete: a source that comes back after being
-                    # soft-deleted (`delete_case_index`) becomes visible
-                    # again once it's successfully re-ingested.
-                    "is_active": True,
-                },
-            )
-            .returning(AIKnowledgeSource.id)
-        )
-        result = await session.execute(stmt)
-        return result.scalar_one()
+def _payload_key(payload: dict) -> _SourceKey:
+    return (
+        payload.get("source_table", ""),
+        payload.get("source_id", ""),
+        payload.get("source_type", ""),
+    )
+
+
+def _failed(entity: DiscoveredEntity, error: str) -> EntityIngestionOutcome:
+    return EntityIngestionOutcome(
+        source_type=entity.source_type,
+        source_id=entity.source_id,
+        kind=IngestionOutcomeKind.FAILED,
+        error=error,
+    )

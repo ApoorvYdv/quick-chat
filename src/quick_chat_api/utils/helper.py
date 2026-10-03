@@ -1,12 +1,15 @@
 from datetime import UTC, date, datetime, time
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dateutil.parser import parse
+
+from quick_chat_api.settings.config import settings
+from quick_chat_api.utils.context import RequestContext
 
 
 def get_datetime_localization() -> dict:
     return {
-        "timezone": "America/Denver",
+        "timezone": RequestContext.timezone or settings.DEFAULT_TIMEZONE,
         "datetime_format": "%m/%d/%Y %I:%M %p",
         "date_format": "%m/%d/%Y",
         "time_format": "%I:%M %p",
@@ -17,7 +20,7 @@ def get_client_timezone() -> ZoneInfo:
     timezone_name = get_datetime_localization().get("timezone", "UTC")
     try:
         return ZoneInfo(timezone_name)
-    except Exception:
+    except ZoneInfoNotFoundError:
         return ZoneInfo("UTC")
 
 
@@ -37,13 +40,12 @@ def _normalize_datetime(value: datetime | str | None) -> datetime | None:
     if not value:
         return None
 
-    if isinstance(value, str):
-        value = parse(value)
+    parsed = parse(value) if isinstance(value, str) else value
 
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=UTC)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
 
-    return value.astimezone(get_client_timezone())
+    return parsed.astimezone(get_client_timezone())
 
 
 def time_now() -> datetime:

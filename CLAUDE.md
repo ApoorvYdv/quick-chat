@@ -11,10 +11,10 @@ Quick Chat is a production-oriented **Generative AI / RAG backend** for querying
 The system combines:
 
 * FastAPI for the API layer
-* Python 3.12
+* Python 3.14
 * SQLAlchemy 2.x for database access
 * PostgreSQL hosted on Tiger Cloud
-* PostgreSQL `pgvector` for semantic/vector search
+* Qdrant (collection per agency) for semantic/vector search; Postgres holds the source rows
 * Pydantic for validation and API schemas
 * `uv` for dependency management
 * Async database access
@@ -79,7 +79,7 @@ Question Understanding
 Retrieval
    ┌──┴─────────────┐
    ↓                ↓
-PostgreSQL       pgvector
+PostgreSQL       Qdrant
 Structured       Semantic
 Queries          Search
    └──────┬─────────┘
@@ -152,7 +152,7 @@ documented in `.claude/rules/coding-patterns.md`, using
 `src/quick_chat_api/core/llm/embedding/` as the reference implementation.
 Do not invent an ad-hoc `if/elif` provider-selection mechanism.
 
-Use Python 3.12 features where they improve clarity.
+Use Python 3.14 features where they improve clarity.
 
 Use type hints consistently.
 
@@ -380,7 +380,7 @@ Use structured PostgreSQL queries for deterministic questions such as:
 * Sanctions
 * Case status
 
-Use pgvector semantic search for questions requiring:
+Use vector (Qdrant) semantic search for questions requiring:
 
 * Semantic understanding
 * Narrative discovery
@@ -410,9 +410,9 @@ LLM
 
 ---
 
-# 12. pgvector
+# 12. Vector store (Qdrant)
 
-pgvector is used for semantic retrieval.
+Qdrant is used for semantic retrieval, one collection per agency. Postgres has no vector column; it keeps the chunk text, lineage and `vector_sync` status.
 
 Vector searches must be scoped by the appropriate tenant and, when applicable:
 
@@ -424,7 +424,7 @@ Vector searches must be scoped by the appropriate tenant and, when applicable:
 
 Never perform a global vector search and filter results in Python afterward.
 
-Prefer database-side filtering.
+Prefer store-side filtering.
 
 Do not blindly increase `top_k` to solve retrieval problems.
 
@@ -714,8 +714,6 @@ coerce_row()
 normalize_rows()
  ↓
 upsert()
- ↓
-reset_sequences()
 ```
 
 Preserve parent-child insertion order.

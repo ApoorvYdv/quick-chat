@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from itertools import pairwise
+
 import pytest
 
 from quick_chat_api.core.llm.embedding.base import EmbeddingProvider
@@ -75,7 +77,7 @@ def test_document_over_budget_packs_whole_lines_per_chunk(chunker, provider):
     )
     assert all(c.metadata["total_chunks"] == 2 for c in chunks)
     # No line was ever cut mid-way.
-    for chunk, source_line in zip(chunks, [lines[:2], lines[2:]]):
+    for chunk, source_line in zip(chunks, [lines[:2], lines[2:]], strict=True):
         for line in source_line:
             assert line in chunk.content
 
@@ -97,7 +99,7 @@ def test_oversized_single_line_falls_back_to_overlapping_token_windows(
         assert c.token_count <= provider.max_tokens
 
     # Consecutive windows overlap by at least one word.
-    for earlier, later in zip(chunks, chunks[1:]):
+    for earlier, later in pairwise(chunks):
         earlier_words = earlier.content.split()
         later_words = later.content.split()
         assert set(earlier_words) & set(later_words)
