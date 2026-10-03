@@ -1,10 +1,13 @@
 import json
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 from starlette.testclient import TestClient
 
+from quick_chat_api.core.rag import pipeline
 from quick_chat_api.core.rag.graph import NODE_ORDER, build_graph
 from quick_chat_api.core.rag.state import EvidenceItem
 from quick_chat_api.main import app
@@ -13,6 +16,13 @@ from quick_chat_api.utils import dependencies as deps
 
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    saver = InMemorySaver()
+
+    @asynccontextmanager
+    async def fake_checkpointer(engine, agency):
+        yield saver
+
+    monkeypatch.setattr(pipeline, "agency_checkpointer", fake_checkpointer)
     monkeypatch.setattr(deps, "validate_active_agency", AsyncMock(return_value=None))
     return TestClient(app)
 

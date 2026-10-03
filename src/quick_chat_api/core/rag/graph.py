@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -42,9 +43,17 @@ async def generate(state: PipelineState) -> dict[str, Any]:
 
 
 async def finalize(state: PipelineState) -> dict[str, Any]:
-    if state.get("answer"):
-        return {}
-    return {"answer": INSUFFICIENT_ANSWER, "insufficient_information": True}
+    answer = state.get("answer") or INSUFFICIENT_ANSWER
+    return {
+        "answer": answer,
+        "insufficient_information": state.get("insufficient_information")
+        or not state.get("answer"),
+        "messages": [
+            HumanMessage(state.get("question", "")),
+            AIMessage(answer),
+        ],
+        "last_case_ids": state.get("resolved_case_ids", []),
+    }
 
 
 DEFAULT_NODES: dict[str, Node] = {
