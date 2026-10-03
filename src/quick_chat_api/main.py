@@ -7,6 +7,7 @@ from starlette_context import plugins
 from starlette_context.middleware import RawContextMiddleware
 
 from quick_chat_api.core.database.connections import get_async_engine
+from quick_chat_api.routers.chat_router import router as chat_router
 from quick_chat_api.routers.health_router import router as health_router
 from quick_chat_api.routers.ingestion_router import router as ingestion_router
 from quick_chat_api.utils.common.logger import logger
@@ -33,6 +34,7 @@ app = FastAPI(
 
 app.include_router(health_router)
 app.include_router(ingestion_router)
+app.include_router(chat_router)
 
 
 @app.exception_handler(Exception)

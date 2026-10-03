@@ -29,6 +29,7 @@ dependencies = [
     "openai>=3.13.0",
     "qdrant-client>=1.19.1",
     "structlog>=26.1.0",
+    "langchain-ollama>=1.1.0",
 ]
 
 [build-system]

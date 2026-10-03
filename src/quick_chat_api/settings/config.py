@@ -108,6 +108,37 @@ class Settings(BaseSettings):
         lt=1,
     )
 
+    # LLM (local Ollama by default)
+    LLM_PROVIDER: str = Field(
+        default="ollama", description="Chat model provider: 'ollama'"
+    )
+    LLM_BASE_URL: str = Field(
+        default="http://localhost:11434", description="Ollama server base URL"
+    )
+    LLM_ANSWER_MODEL: str = Field(
+        default="qwen3:4b", description="Model for the 'answer' role"
+    )
+    LLM_ROUTER_MODEL: str = Field(
+        default="qwen3:4b", description="Model for the 'router' (understand) role"
+    )
+    LLM_TIMEOUT_S: float = Field(
+        default=120.0, description="Per-call LLM timeout in seconds", gt=0
+    )
+    LLM_MAX_TOKENS: int = Field(
+        default=1024, description="Max tokens generated per LLM call", ge=1
+    )
+    LLM_TEMPERATURE: float = Field(
+        default=0.0, description="Sampling temperature (0 for grounded answers)", ge=0
+    )
+
+    # Chat pipeline
+    CONTEXT_MAX_TOKENS: int = Field(
+        default=12000, description="Token budget for evidence sent to the LLM", ge=1
+    )
+    CHAT_HISTORY_MAX_TURNS: int = Field(
+        default=6, description="Conversation turns kept in the prompt", ge=0
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
