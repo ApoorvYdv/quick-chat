@@ -44,6 +44,32 @@ services:
     networks:
       - court-cms-net
 
+  # Shared embedding model host; API workers use EMBEDDING_PROVIDER=remote.
+  # Reuses the app image; Settings requires the DB/AWS vars but the service never connects.
+  inference:
+    build:
+      context: .
+      dockerfile: ./dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      PYTHONUNBUFFERED: 1
+      DB_USERNAME: unused
+      DB_PASSWORD: unused
+      DB_NAME: unused
+      DB_PORT: 5432
+      DB_HOST: unused
+      AWS_S3_BUCKET: unused
+    command: [ "uv", "run", "--", "uvicorn", "quick_chat_inference.main:app", "--host", "0.0.0.0", "--port", "8001" ]
+    healthcheck:
+      test: [ "CMD", "/quick_chat_api/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/readyz', timeout=3)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks:
+      - court-cms-net
+
   # This service runs the fastapi app server for running APIs
   app:
     build:

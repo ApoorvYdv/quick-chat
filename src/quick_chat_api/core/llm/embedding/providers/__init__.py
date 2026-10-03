@@ -14,8 +14,9 @@ No other file needs to change.
 from quick_chat_api.core.llm.embedding.providers import (
     local_sentence_transformer as _local_sentence_transformer,
 )
+from quick_chat_api.core.llm.embedding.providers import remote as _remote
 
 __all__: list[str] = []
 
 # Referenced only for its import side effect (provider self-registration).
-_ = _local_sentence_transformer
+_ = (_local_sentence_transformer, _remote)

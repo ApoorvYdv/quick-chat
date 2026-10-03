@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # Embeddings
     EMBEDDING_PROVIDER: str = Field(
         default="local",
-        description="Embedding provider to use: 'local' (sentence-transformers) or 'openai'",
+        description="Embedding provider to use: 'local' (sentence-transformers) or 'remote' (inference service)",
     )
     EMBEDDING_MODEL: str = Field(
         default="sentence-transformers/all-mpnet-base-v2",
@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     )
     EMBEDDING_API_KEY: str | None = Field(
         default=None, description="API key for a remote embedding provider (if any)"
+    )
+    EMBEDDING_REMOTE_URL: str = Field(
+        default="http://inference:8001",
+        description="Base URL of the inference service, used when EMBEDDING_PROVIDER=remote",
+    )
+    EMBEDDING_REMOTE_TIMEOUT_S: float = Field(
+        default=30.0, description="Timeout for inference service calls", gt=0
     )
     EMBEDDING_VERSION: str = Field(
         default="v1",

@@ -21,7 +21,7 @@ cp .env.example .env   # then fill in the values below
 | `DB_USERNAME`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME` | Postgres (Tiger Cloud) connection |
 | `DB_POOL_SIZE`, `DB_MAX_OVERFLOW` | SQLAlchemy async connection pool sizing |
 | `AWS_S3_BUCKET` | S3 bucket used for file storage |
-| `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_DIM`, `EMBEDDING_BATCH_SIZE`, `EMBEDDING_DEVICE`, `EMBEDDING_API_KEY`, `EMBEDDING_VERSION` | Embedding provider config |
+| `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_DIM`, `EMBEDDING_BATCH_SIZE`, `EMBEDDING_DEVICE`, `EMBEDDING_API_KEY`, `EMBEDDING_REMOTE_URL`, `EMBEDDING_REMOTE_TIMEOUT_S`, `EMBEDDING_VERSION` | Embedding provider config |
 | `VECTOR_STORE_PROVIDER`, `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_COLLECTION_PREFIX` | Qdrant vector store config |
 | `CHUNKING_STRATEGY`, `CHUNKING_VERSION`, `CHUNK_TOKEN_SAFETY_MARGIN`, `CHUNK_OVERLAP_RATIO` | Chunking config for embedding ingestion |
 

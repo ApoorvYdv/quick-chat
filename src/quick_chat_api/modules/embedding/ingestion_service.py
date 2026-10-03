@@ -79,7 +79,8 @@ def _indexing_key(provider: EmbeddingProvider) -> str:
     the next run -- content can be byte-identical but still need re-embedding
     if the model or chunking strategy changed.
     """
-    return f"{settings.EMBEDDING_PROVIDER}|{settings.EMBEDDING_MODEL}|{settings.EMBEDDING_VERSION}|{settings.CHUNKING_STRATEGY}|{settings.CHUNKING_VERSION}"
+    # Provider is excluded on purpose: local and remote serve the same model.
+    return f"{settings.EMBEDDING_MODEL}|{settings.EMBEDDING_VERSION}|{settings.CHUNKING_STRATEGY}|{settings.CHUNKING_VERSION}"
 
 
 class IngestionOutcomeKind(StrEnum):

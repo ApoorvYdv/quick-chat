@@ -40,11 +40,12 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/quick_chat_api", "tests"]
+packages = ["src/quick_chat_api", "src/quick_chat_inference", "tests"]
 
 [tool.hatch.build.targets.sdist]
 include = [
   "src/quick_chat_api",
+  "src/quick_chat_inference",
   "tests",
   "dockerfile",
   "docker-compose.yml",
