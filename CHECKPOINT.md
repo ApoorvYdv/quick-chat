@@ -2,6 +2,12 @@
 
 Short living log; newest on top. Build history before S0 is in `docs/history/CHECKPOINT-2026-09.md`. The forward plan is `PLAN.md`.
 
+## 2026-10-04 — S1 closed
+
+Done: `understand.v1` prompt; `traced_node` now fans out to sinks (structlog always, redacted LangSmith when `LANGSMITH_ENABLED`; ids/counts/latency only, own flag so LangChain's auto-tracing of LLM content is never switched on); `get_current_user` anonymous stub on the chat router. S1 acceptance met except nothing new open.
+
+Next: S0.11 real-data validation on a scratch agency, then S2/S3. LLM is local Ollama only (qwen3:4b); S2 PII decision: payment, disposition, sanction, criminal, vehicle and address may all be embedded.
+
 ## 2026-10-04 — S1.7 checkpointer
 
 Done: `core/rag/checkpointer.py` (`agency_checkpointer`: connection borrowed from the shared pool, `search_path` pinned to the agency schema and restored, lazy per-agency `setup()`); graph compiled per request with it; `thread_id = "{agency}:{session_id}"`. Only `messages` + `last_case_ids` persist (`evidence`/`contexts` are untracked channels; `initial_state` resets per-turn fields). Checkpointer failure → generic 5xx. Integration test proves per-schema isolation and a clean pool connection.

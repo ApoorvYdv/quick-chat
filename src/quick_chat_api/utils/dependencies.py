@@ -5,7 +5,7 @@ from quick_chat_api.core.constants.error_response import ErrorResponse
 from quick_chat_api.core.database.connections import get_async_engine
 from quick_chat_api.core.database.session_context_manager import session_context
 from quick_chat_api.core.models.config.config import Agencies, Config
-from quick_chat_api.utils.context import RequestContext
+from quick_chat_api.utils.context import RequestContext, UserDetails
 
 LOCALIZATION_SECTION = "localization"
 TIMEZONE_KEY = "timezone"
@@ -34,3 +34,10 @@ async def get_agency_header(agency: str = Header(...)):
     RequestContext.timezone = await validate_active_agency(agency)
     RequestContext.agency = agency
     return agency
+
+
+async def get_current_user() -> UserDetails:
+    """Auth stub until Cognito: every request is an anonymous, non-admin user."""
+    user = UserDetails(username="anonymous")
+    RequestContext.user_details = user
+    return user

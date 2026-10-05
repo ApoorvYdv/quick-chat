@@ -11,9 +11,11 @@ from fastapi.responses import StreamingResponse
 from quick_chat_api.core.controllers.chat_controller import ChatController
 from quick_chat_api.core.rag.streaming import sse_stream
 from quick_chat_api.core.schemas.chat import AskRequest, AskResponse
-from quick_chat_api.utils.dependencies import get_agency_header
+from quick_chat_api.utils.dependencies import get_agency_header, get_current_user
 
-router = APIRouter(tags=["chat"], dependencies=[Depends(get_agency_header)])
+router = APIRouter(
+    tags=["chat"], dependencies=[Depends(get_agency_header), Depends(get_current_user)]
+)
 
 ChatDep = Annotated[ChatController, Depends()]
 

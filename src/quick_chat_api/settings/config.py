@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -137,6 +137,13 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = Field(
         default=0.0, description="Sampling temperature (0 for grounded answers)", ge=0
     )
+
+    # LangSmith (redacted metadata-only tracing; off unless enabled per environment)
+    LANGSMITH_ENABLED: bool = Field(
+        default=False, description="Send redacted per-node traces to LangSmith"
+    )
+    LANGSMITH_API_KEY: SecretStr | None = Field(default=None)
+    LANGSMITH_PROJECT: str = Field(default="quick-chat")
 
     # Chat pipeline
     CONTEXT_MAX_TOKENS: int = Field(
