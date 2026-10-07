@@ -219,11 +219,13 @@ SOURCE_TYPE_DOMAIN: dict[AIKnowledgeSourceType, Domain] = {
     _T.CASE_SUMMARY: Domain.CASE,
     _T.PARTY: Domain.CASE,
     _T.CHARGE: Domain.CASE,
+    _T.CRIMINAL: Domain.CASE,
+    _T.VEHICLE: Domain.CASE,
+    _T.ADDRESS: Domain.CASE,
     _T.APPEARANCE: Domain.HEARINGS,
     _T.PAYMENT: Domain.FINANCIAL,
     _T.DISPOSITION: Domain.FINANCIAL,
     _T.SANCTION: Domain.FINANCIAL,
-    # ponytail: criminal/vehicle/address unmapped until an S4 agent owns them
 }
 
 

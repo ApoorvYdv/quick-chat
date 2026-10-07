@@ -2,6 +2,12 @@
 
 Short living log; newest on top. Build history before S0 is in `docs/history/CHECKPOINT-2026-09.md`. The forward plan is `PLAN.md`.
 
+## 2026-10-07 — S2 closed
+
+Done: `structured/case.py` (re-exports `get_cases_by_number`); criminal, vehicle and address map to `Domain.CASE`; real-Postgres test `tests/modules/rag/test_structured_integration.py` seeds its own rows in a throwaway schema (case-number lookup returns every duplicate, appearances ordered, next appearance, void payments excluded, per-case scoping). 125 tests, ruff and mypy clean.
+
+Open: `SOURCE_TYPE_GROUPS` (disposition/sanction under `outcome`) vs `SOURCE_TYPE_DOMAIN` (under `financial`) still differ; reconcile in S4. Next: S3.
+
 ## 2026-10-07 — S2 structured queries (hearings, financial)
 
 Done: `modules/rag/structured/{hearings,financial}.py` (`get_appearances`, `get_next_appearance` in the agency timezone, `get_payment_summary` with non-void total; no balance, no assessed-amount source exists); `Domain` + `SOURCE_TYPE_DOMAIN` in constants (kept beside `SOURCE_TYPE_GROUPS`, per S1.10). Mock-session tests only.

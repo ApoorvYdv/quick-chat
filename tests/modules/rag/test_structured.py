@@ -54,3 +54,10 @@ def test_domain_map_matches_plan() -> None:
     assert SOURCE_TYPE_DOMAIN[T.APPEARANCE] is Domain.HEARINGS
     assert SOURCE_TYPE_DOMAIN[T.DISPOSITION] is Domain.FINANCIAL
     assert SOURCE_TYPE_DOMAIN[T.CHARGE] is Domain.CASE
+
+
+def test_case_level_types_map_to_case_domain() -> None:
+    T = AIKnowledgeSourceType
+    assert {SOURCE_TYPE_DOMAIN[t] for t in (T.CRIMINAL, T.VEHICLE, T.ADDRESS)} == {
+        Domain.CASE
+    }

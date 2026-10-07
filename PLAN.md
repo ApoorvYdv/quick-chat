@@ -191,11 +191,11 @@ Plain async functions used by the linear pipeline now and by agents later: `stru
 
 ---
 
-## S2 — Data coverage `[~]` (indexing done 2026-10-07; structured query functions open)
+## S2 — Data coverage `[x]` (closed 2026-10-07)
 
 - `[x]` Projectors for `payment` (aggregate-safe: type, amount, currency, date, status; never card or account fields), `disposition`, `sanction`, `criminal`, `vehicle`, `address` (PII exposure to be reviewed field by field; default: not embedded until you decide). Update `AIKnowledgeSourceType`, `discover_all`, eager loading (one round trip, no N+1).
 - `[x]` Add `case_number` (and `case_title`) to the Qdrant payload before the first real re-ingest so agency-wide search can display it without a Postgres hop. A payload change later means a full reindex, so decide now.
-- `[ ]` Complete the structured query functions per domain and the domain map (see S1.10 note on `SOURCE_TYPE_GROUPS`).
+- `[x]` Complete the structured query functions per domain and the domain map (see S1.10 note on `SOURCE_TYPE_GROUPS`).
 - `[x]` Re-ingest once via `backfill_embeddings.py` (content hash now covers the case payload, so everything re-embedded).
 - **Decisions (2026-10-06):** payment embeds only amount, currency, date, void, `payee_name`, `payee_email`, `payee_address`, `reference_number`, `receipt_number`, `consider_as_full` (never card/exp/`qp_payment_id`/method/mode/`service_fee`); vehicle (incl. plate, VIN), address (all types) and criminal (incl. observation text) embed all fields; disposition and sanction get standalone chunks (still also inlined in the charge chunk, so S3 dedupes by `source_id`); payload adds `case_number`, `case_title`, `case_type`, `case_status`, `is_juvenile`; `case_summary` unchanged.
 - **Acceptance `[x]` (verified on `southern_ute`):** every entity a domain agent needs is indexed; `retrieve(source_types=<financial>)` returns only financial chunks for the right tenant and case; PII exclusion tests per projector.
