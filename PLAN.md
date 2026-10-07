@@ -109,8 +109,8 @@ tests/  evals/+  docs/history/+  .github/workflows/ci.yml+
 
 | Area | Status |
 |---|---|
-| Projectors (case, case_summary, party, charge, appearance), `StructuredFieldChunker`, `CaseKnowledgeSourceAdapter`, `CaseIngestionService`, ingestion router/controller | `[x]` (Qdrant-only; Postgres knowledge tables removed in S0.2) |
-| `EmbeddingProvider` (`local`), `VectorStore` + Qdrant provider (collection-per-agency, lazy create, 12 indexed payload fields) | `[x]` |
+| Projectors (case, case_summary, party, charge, appearance, payment, disposition, sanction, criminal, vehicle, address), `StructuredFieldChunker`, `CaseKnowledgeSourceAdapter`, `CaseIngestionService`, ingestion router/controller | `[x]` (Qdrant-only; Postgres knowledge tables removed in S0.2) |
+| `EmbeddingProvider` (`local`), `VectorStore` + Qdrant provider (collection-per-agency, lazy create, 16 indexed payload fields incl. `case_number`/`case_title`/`case_type`/`case_status`/`is_juvenile`) | `[x]` |
 | `retrieve()` and `get_cases_by_number()` | `[x]` mock-tested; spot-checked on real data (S0.11) |
 | `RequestContext`, `ErrorResponse`, `get_agency_header`, `session_context` + `is_active` filter, two-env Alembic runner | `[x]` |
 | Health endpoints, structured logger, lifespan, conftest/integration tests, CI, reranker, LLM layer, prompts, graph, checkpointer, chat endpoints, evals, inference service, jobs | `[ ]` |
@@ -185,19 +185,20 @@ Plain async functions used by the linear pipeline now and by agents later: `stru
 
 ### S1.10 Domain map
 
-One constant maps `AIKnowledgeSourceType → Domain` (`case | hearings | financial`): case, case_summary, party, charge → case; appearance → hearings; payment, disposition, sanction → financial. `retrieve(source_types=…)` already filters in Qdrant, so S4 agents need no payload or index change.
+`SOURCE_TYPE_GROUPS` (S2, `core/constants/constants.py`: financial, outcome, people, hearings, case_level) already exists for `retrieve(source_types=…)`; the S4 agent domain map below must be reconciled with it (here disposition/sanction sit under `outcome`, not financial). One constant maps `AIKnowledgeSourceType → Domain` (`case | hearings | financial`): case, case_summary, party, charge → case; appearance → hearings; payment, disposition, sanction → financial. `retrieve(source_types=…)` already filters in Qdrant, so S4 agents need no payload or index change.
 
 **Acceptance:** an empty-but-wired graph (fake nodes) serves both endpoints with checkpointing, tracing and streaming; replacing a fake node with a real one needs no signature change; cross-agency checkpoint isolation test passes against real Postgres.
 
 ---
 
-## S2 — Data coverage `[ ]`
+## S2 — Data coverage `[~]` (indexing done 2026-10-07; structured query functions open)
 
-- Projectors for `payment` (aggregate-safe: type, amount, currency, date, status; never card or account fields), `disposition`, `sanction`, `criminal`, `vehicle`, `address` (PII exposure to be reviewed field by field; default: not embedded until you decide). Update `AIKnowledgeSourceType`, `discover_all`, eager loading (one round trip, no N+1).
-- Add `case_number` (and `case_title`) to the Qdrant payload before the first real re-ingest so agency-wide search can display it without a Postgres hop. A payload change later means a full reindex, so decide now.
-- Complete the structured query functions per domain and the domain map.
-- Re-ingest once via `backfill_embeddings.py` (indexing key changes by design).
-- **Acceptance:** every entity a domain agent needs is indexed; `retrieve(source_types=<financial>)` returns only financial chunks for the right tenant and case; PII exclusion tests per projector.
+- `[x]` Projectors for `payment` (aggregate-safe: type, amount, currency, date, status; never card or account fields), `disposition`, `sanction`, `criminal`, `vehicle`, `address` (PII exposure to be reviewed field by field; default: not embedded until you decide). Update `AIKnowledgeSourceType`, `discover_all`, eager loading (one round trip, no N+1).
+- `[x]` Add `case_number` (and `case_title`) to the Qdrant payload before the first real re-ingest so agency-wide search can display it without a Postgres hop. A payload change later means a full reindex, so decide now.
+- `[ ]` Complete the structured query functions per domain and the domain map (see S1.10 note on `SOURCE_TYPE_GROUPS`).
+- `[x]` Re-ingest once via `backfill_embeddings.py` (content hash now covers the case payload, so everything re-embedded).
+- **Decisions (2026-10-06):** payment embeds only amount, currency, date, void, `payee_name`, `payee_email`, `payee_address`, `reference_number`, `receipt_number`, `consider_as_full` (never card/exp/`qp_payment_id`/method/mode/`service_fee`); vehicle (incl. plate, VIN), address (all types) and criminal (incl. observation text) embed all fields; disposition and sanction get standalone chunks (still also inlined in the charge chunk, so S3 dedupes by `source_id`); payload adds `case_number`, `case_title`, `case_type`, `case_status`, `is_juvenile`; `case_summary` unchanged.
+- **Acceptance `[x]` (verified on `southern_ute`):** every entity a domain agent needs is indexed; `retrieve(source_types=<financial>)` returns only financial chunks for the right tenant and case; PII exclusion tests per projector.
 
 ## S3 — Single-path answer pipeline on the graph `[ ]`
 
@@ -285,7 +286,7 @@ structlog JSON with `request_id`, `correlation_id`, `agency`; per-node latency a
 | Item | Default |
 |---|---|
 | Chat history retention | 30 days, purge job in S5 |
-| PII sent to LLM/judge | party names allowed; SSN, licence, card never; addresses not embedded until decided |
+| PII sent to LLM/judge | party names allowed; SSN, licence, card never; addresses, vehicle plate/VIN, payee email/address embedded (decided in S2) |
 | Limits | 6 history turns, 12k context tokens, target p95 < 8 s non-streaming |
 | JEV routing | revisit after S3 baseline |
 | Production hosting for Qdrant/inference/Redis | decide at S5; compose is dev-only |

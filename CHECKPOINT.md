@@ -2,6 +2,14 @@
 
 Short living log; newest on top. Build history before S0 is in `docs/history/CHECKPOINT-2026-09.md`. The forward plan is `PLAN.md`.
 
+## 2026-10-07 — S2 indexing done
+
+Done: six new projectors (payment, disposition, sanction, criminal, vehicle, address) with the S2 field decisions recorded in `PLAN.md`; `CaseKnowledgeSourceAdapter` discovers them in one eager-loaded query; `SOURCE_TYPE_GROUPS` constant; Qdrant payload now carries `case_number`, `case_title`, `case_type`, `case_status`, `is_juvenile` (all indexed; indexes are also created on pre-existing collections); the content hash covers the case payload so a changed title/status re-embeds. `southern_ute` re-ingested: 1149 points across all 11 source types (100 case, 176 case_summary, 214 charge, 163 party, 130 appearance, 100 criminal, 87 address, 85 vehicle, 56 payment, 22 sanction, 16 disposition); payment chunks match the 56 Postgres payments. Acceptance verified: every group filter returns only its own types, financial plus `case_record_id` returns only that case's payments, no card/exp/method fields in payment chunks, every point has the case payload keys. 120 tests, ruff and mypy clean.
+
+Open: structured query functions per domain and the domain map (rest of S2); reconcile `SOURCE_TYPE_GROUPS` with the S4 agent domains. Findings for S3: charge/disposition/sanction facts now appear in several chunk types (dedupe by `source_id`, prefer the specific chunk); chunks carry PII by design (payee email/address, plates, VIN, addresses), so S3 logging and tracing must keep chunk content out.
+
+Next: structured query functions, then S3.
+
 ## 2026-10-05 — S0.11 real-data validation
 
 Done: `create_tables → ingest_data → backfill_embeddings` run on local compose (Postgres + Qdrant) for agency `southern_ute` from `batch_1.json`: 100 cases in Postgres and Qdrant. `get_cases_by_number()` returns eager-loaded parties/charges/appearances/payments (unknown number → empty); `retrieve()` returns charge chunks for charge questions and `case_id` scoping is applied store-side. The `southern_ute` schema and its Qdrant collection are kept as the dev dataset for S2/S3.
