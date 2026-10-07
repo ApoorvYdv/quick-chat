@@ -207,6 +207,26 @@ SOURCE_TYPE_GROUPS: dict[str, list[str]] = {
 }
 
 
+class Domain(str, Enum):
+    CASE = "case"
+    HEARINGS = "hearings"
+    FINANCIAL = "financial"
+
+
+# Agent/structured-query domains (S1.10); distinct from SOURCE_TYPE_GROUPS, which only filters retrieval.
+SOURCE_TYPE_DOMAIN: dict[AIKnowledgeSourceType, Domain] = {
+    _T.CASE: Domain.CASE,
+    _T.CASE_SUMMARY: Domain.CASE,
+    _T.PARTY: Domain.CASE,
+    _T.CHARGE: Domain.CASE,
+    _T.APPEARANCE: Domain.HEARINGS,
+    _T.PAYMENT: Domain.FINANCIAL,
+    _T.DISPOSITION: Domain.FINANCIAL,
+    _T.SANCTION: Domain.FINANCIAL,
+    # ponytail: criminal/vehicle/address unmapped until an S4 agent owns them
+}
+
+
 class HearingType(str, Enum):
     ARRAIGNMENT = "ARRAIGNMENT"
     AOP = "AOP"

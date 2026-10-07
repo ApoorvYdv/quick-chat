@@ -2,6 +2,12 @@
 
 Short living log; newest on top. Build history before S0 is in `docs/history/CHECKPOINT-2026-09.md`. The forward plan is `PLAN.md`.
 
+## 2026-10-07 — S2 structured queries (hearings, financial)
+
+Done: `modules/rag/structured/{hearings,financial}.py` (`get_appearances`, `get_next_appearance` in the agency timezone, `get_payment_summary` with non-void total; no balance, no assessed-amount source exists); `Domain` + `SOURCE_TYPE_DOMAIN` in constants (kept beside `SOURCE_TYPE_GROUPS`, per S1.10). Mock-session tests only.
+
+Open: `structured/case.py` (thin wrapper over `get_cases_by_number`), a real-Postgres test on `southern_ute`, domain mapping for criminal/vehicle/address.
+
 ## 2026-10-07 — S2 indexing done
 
 Done: six new projectors (payment, disposition, sanction, criminal, vehicle, address) with the S2 field decisions recorded in `PLAN.md`; `CaseKnowledgeSourceAdapter` discovers them in one eager-loaded query; `SOURCE_TYPE_GROUPS` constant; Qdrant payload now carries `case_number`, `case_title`, `case_type`, `case_status`, `is_juvenile` (all indexed; indexes are also created on pre-existing collections); the content hash covers the case payload so a changed title/status re-embeds. `southern_ute` re-ingested: 1149 points across all 11 source types (100 case, 176 case_summary, 214 charge, 163 party, 130 appearance, 100 criminal, 87 address, 85 vehicle, 56 payment, 22 sanction, 16 disposition); payment chunks match the 56 Postgres payments. Acceptance verified: every group filter returns only its own types, financial plus `case_record_id` returns only that case's payments, no card/exp/method fields in payment chunks, every point has the case payload keys. 120 tests, ruff and mypy clean.
