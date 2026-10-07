@@ -183,6 +183,28 @@ class AIKnowledgeSourceType(str, Enum):
     PARTY = "party"
     CHARGE = "charge"
     APPEARANCE = "appearance"
+    PAYMENT = "payment"
+    DISPOSITION = "disposition"
+    SANCTION = "sanction"
+    CRIMINAL = "criminal"
+    VEHICLE = "vehicle"
+    ADDRESS = "address"
+
+
+_T = AIKnowledgeSourceType
+# Domain groupings for `retrieve(source_types=...)`; every source type belongs to exactly one.
+SOURCE_TYPE_GROUPS: dict[str, list[str]] = {
+    "financial": [_T.PAYMENT.value],
+    "outcome": [_T.CHARGE.value, _T.DISPOSITION.value, _T.SANCTION.value],
+    "people": [_T.PARTY.value, _T.ADDRESS.value],
+    "hearings": [_T.APPEARANCE.value],
+    "case_level": [
+        _T.CASE.value,
+        _T.CASE_SUMMARY.value,
+        _T.CRIMINAL.value,
+        _T.VEHICLE.value,
+    ],
+}
 
 
 class HearingType(str, Enum):

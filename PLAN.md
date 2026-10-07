@@ -111,7 +111,7 @@ tests/  evals/+  docs/history/+  .github/workflows/ci.yml+
 |---|---|
 | Projectors (case, case_summary, party, charge, appearance), `StructuredFieldChunker`, `CaseKnowledgeSourceAdapter`, `CaseIngestionService`, ingestion router/controller | `[x]` (Qdrant-only; Postgres knowledge tables removed in S0.2) |
 | `EmbeddingProvider` (`local`), `VectorStore` + Qdrant provider (collection-per-agency, lazy create, 12 indexed payload fields) | `[x]` |
-| `retrieve()` and `get_cases_by_number()` | `[x]` mock-tested only |
+| `retrieve()` and `get_cases_by_number()` | `[x]` mock-tested; spot-checked on real data (S0.11) |
 | `RequestContext`, `ErrorResponse`, `get_agency_header`, `session_context` + `is_active` filter, two-env Alembic runner | `[x]` |
 | Health endpoints, structured logger, lifespan, conftest/integration tests, CI, reranker, LLM layer, prompts, graph, checkpointer, chat endpoints, evals, inference service, jobs | `[ ]` |
 
@@ -131,7 +131,7 @@ Goal: one storage path, one Python, one driver, real tooling; no feature work.
 - **S0.8 Tooling and test scaffolding (D15).** Dev group: `ruff`, `mypy`, `pytest-asyncio`, `pytest-cov`, `testcontainers`, `httpx`, `pre-commit`, `pip-audit`, `bandit`. Ruff rule set `E,F,I,UP,B,ASYNC,S,SIM,RUF`; mypy on `src` (new packages strict). `.pre-commit-config.yaml`. `tests/conftest.py` and fakes per §7. `.github/workflows/ci.yml` (assumes GitHub; adjust if you use another CI). Add the three contract tests: `data_ingestion` scripts vs scratch schema, schema parity (`create_all` vs Alembic produce the same tables/indexes/columns), frozen-surface import/signature test.
 - **S0.9 Docs.** Update `CLAUDE.md`/`.claude/rules` where stale (Python version, `reset_sequences`, pgvector mentions, architecture additions); move `CHECKPOINT.md` to `docs/history/CHECKPOINT-2026-09.md` and start a short new one; update README env table.
 - **S0.10 Optional (default off):** sanitize `session_context`'s error log to exception class + SQLSTATE only.
-- **S0.11 Real-data validation.** Run `create_tables → ingest_data → backfill_embeddings` for a scratch agency from `batch_1.json`; spot-check `retrieve()` and `get_cases_by_number()`.
+- **S0.11 Real-data validation `[x]` (2026-10-05, agency `southern_ute`, local compose).** Run `create_tables → ingest_data → backfill_embeddings` for a scratch agency from `batch_1.json`; spot-check `retrieve()` and `get_cases_by_number()`.
 - **Acceptance:** CI green (lint, types, unit, integration); `grep -ri pgvector src` finds only the historical migration; ingestion contract test passes; `/healthz` and `/readyz` behave; one driver family in `uv.lock`.
 
 ---

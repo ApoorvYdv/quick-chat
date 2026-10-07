@@ -44,7 +44,12 @@ _INDEXED_PAYLOAD_FIELDS = (
     "embedding_version",
     "chunking_strategy",
     "chunking_version",
+    "case_number",
+    "case_title",
+    "case_type",
+    "case_status",
 )
+_BOOL_PAYLOAD_FIELDS = ("is_juvenile",)
 
 _SCROLL_PAGE_SIZE = 256
 
@@ -91,12 +96,20 @@ class QdrantVectorStore(VectorStore):
                     size=self._vector_size, distance=qmodels.Distance.COSINE
                 ),
             )
-            for field_name in _INDEXED_PAYLOAD_FIELDS:
-                self._client.create_payload_index(
-                    collection_name=collection,
-                    field_name=field_name,
-                    field_schema=qmodels.PayloadSchemaType.KEYWORD,
-                )
+        # Idempotent, and outside the creation branch so collections that predate
+        # a new payload field pick up its index without a rebuild.
+        for field_name in _INDEXED_PAYLOAD_FIELDS:
+            self._client.create_payload_index(
+                collection_name=collection,
+                field_name=field_name,
+                field_schema=qmodels.PayloadSchemaType.KEYWORD,
+            )
+        for field_name in _BOOL_PAYLOAD_FIELDS:
+            self._client.create_payload_index(
+                collection_name=collection,
+                field_name=field_name,
+                field_schema=qmodels.PayloadSchemaType.BOOL,
+            )
         self._ensured_collections.add(collection)
 
     def _resolve_collection(self, agency: str) -> str:

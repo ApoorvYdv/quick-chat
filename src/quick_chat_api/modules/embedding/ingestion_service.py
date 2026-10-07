@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
 from dataclasses import dataclass
 from enum import StrEnum
 from uuid import UUID, uuid5
@@ -59,8 +60,10 @@ _SourceKey = tuple[str, str, str]
 NAMESPACE_CHUNK = UUID("6f0c3a1e-8d57-4c0e-9a55-3f6f4b7d2c11")
 
 
-def _content_hash(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+def _content_hash(entity: DiscoveredEntity) -> str:
+    """Covers the case payload too, so a changed case title/status re-indexes unchanged content."""
+    payload = json.dumps(entity.case_context, sort_keys=True, default=str)
+    return hashlib.sha256(f"{entity.document.content}\0{payload}".encode()).hexdigest()
 
 
 def _source_key(entity: DiscoveredEntity) -> _SourceKey:
@@ -197,7 +200,7 @@ class CaseIngestionService:
 
         outcomes: list[EntityIngestionOutcome] = []
         for entity in discovered:
-            content_hash = _content_hash(entity.document.content)
+            content_hash = _content_hash(entity)
             existing = indexed.get(_source_key(entity))
             if (
                 not force
@@ -281,6 +284,7 @@ class CaseIngestionService:
                 id=_point_id(key, chunk.index),
                 vector=vector,
                 payload={
+                    **entity.case_context,
                     "case_record_id": str(entity.case_record_id),
                     "source_type": entity.source_type,
                     "source_table": entity.source_table,

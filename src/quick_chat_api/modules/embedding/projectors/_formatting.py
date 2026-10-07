@@ -20,3 +20,15 @@ def field_line(label: str, value: Any) -> str | None:
 def join_lines(*lines: str | None) -> str:
     """Join non-empty lines into one block of text."""
     return "\n".join(line for line in lines if line)
+
+
+def charge_context(entity: Any) -> tuple[str | None, str | None]:
+    """`(case_number, charge_description)` from an eager-loaded `case_charge`, else `(None, None)`."""
+    charge = entity.__dict__.get("case_charge")
+    if charge is None:
+        return None, None
+    case_record = charge.__dict__.get("case_record")
+    return (
+        case_record.case_number if case_record is not None else None,
+        charge.charge_description,
+    )

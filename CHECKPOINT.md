@@ -2,11 +2,19 @@
 
 Short living log; newest on top. Build history before S0 is in `docs/history/CHECKPOINT-2026-09.md`. The forward plan is `PLAN.md`.
 
+## 2026-10-05 — S0.11 real-data validation
+
+Done: `create_tables → ingest_data → backfill_embeddings` run on local compose (Postgres + Qdrant) for agency `southern_ute` from `batch_1.json`: 100 cases in Postgres and Qdrant. `get_cases_by_number()` returns eager-loaded parties/charges/appearances/payments (unknown number → empty); `retrieve()` returns charge chunks for charge questions and `case_id` scoping is applied store-side. The `southern_ute` schema and its Qdrant collection are kept as the dev dataset for S2/S3.
+
+Findings for S2/S3: a charge appears both as a `charge` chunk and inside a `case_summary` chunk, so context construction must dedupe by `source_id`; payment-balance and hearing-date questions retrieve poorly by vector (scores 0.37–0.47, no date ranking) and should route to structured Postgres; Ollama is not needed until S3.
+
+Next: S2 data coverage, then S3.
+
 ## 2026-10-04 — S1 closed
 
 Done: `understand.v1` prompt; `traced_node` now fans out to sinks (structlog always, redacted LangSmith when `LANGSMITH_ENABLED`; ids/counts/latency only, own flag so LangChain's auto-tracing of LLM content is never switched on); `get_current_user` anonymous stub on the chat router. S1 acceptance met except nothing new open.
 
-Next: S0.11 real-data validation on a scratch agency, then S2/S3. LLM is local Ollama only (qwen3:4b); S2 PII decision: payment, disposition, sanction, criminal, vehicle and address may all be embedded.
+Next: S0.11 (done 2026-10-05), then S2/S3. LLM is local Ollama only (qwen3:4b); S2 PII decision: payment, disposition, sanction, criminal, vehicle and address may all be embedded.
 
 ## 2026-10-04 — S1.7 checkpointer
 
