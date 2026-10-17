@@ -1,0 +1,30 @@
+{
+  "task": "T01-llm-anthropic",
+  "gate": "lint",
+  "kind": "command",
+  "attempt": "78baac4f-0945-4540-b757-49a9df0a08b2",
+  "command": "uv run ruff check src tests evals && uv run mypy src",
+  "started_at": "2026-10-17T16:34:02.421Z",
+  "observed_at": "2026-10-17T16:34:18.342Z",
+  "exit_code": 1,
+  "signal": null,
+  "stdout": "All checks passed!\nsrc/quick_chat_api/core/llm/generation/providers/anthropic.py:22: error: Unexpected keyword argument \"model\" for \"ChatAnthropic\"  [call-arg]\nsrc/quick_chat_api/core/llm/generation/providers/anthropic.py:22: error: Unexpected keyword argument \"max_tokens\" for \"ChatAnthropic\"  [call-arg]\nsrc/quick_chat_api/core/llm/generation/providers/anthropic.py:22: error: Unexpected keyword argument \"default_request_timeout\" for \"ChatAnthropic\"  [call-arg]\nFound 3 errors in 1 file (checked 93 source files)\n",
+  "stderr": "",
+  "failure": "command-failed",
+  "receipt": null,
+  "revision": {
+    "commit": "7c26fcd9644551b5600a639f5f096c65879b704d",
+    "dirty": true
+  },
+  "source_hash": "ee793a2d2970274f224762740f65fab95411a53db076cce5e5bb77c7cb5ccdba",
+  "before_hash": "ee793a2d2970274f224762740f65fab95411a53db076cce5e5bb77c7cb5ccdba",
+  "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "4ccf06d2692d8f7bb34983d168011b0616dff0170d485bbd6703c875974fa1f9"
+}

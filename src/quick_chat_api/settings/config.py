@@ -115,9 +115,13 @@ class Settings(BaseSettings):
         lt=1,
     )
 
-    # LLM (local Ollama by default)
+    # LLM (local Ollama by default; 'anthropic' for Claude)
     LLM_PROVIDER: str = Field(
-        default="ollama", description="Chat model provider: 'ollama'"
+        default="ollama", description="Chat model provider: 'ollama' | 'anthropic'"
+    )
+    ANTHROPIC_API_KEY: SecretStr | None = Field(default=None)
+    LLM_MAX_RETRIES: int = Field(
+        default=2, description="SDK-level retries per LLM call", ge=0
     )
     LLM_BASE_URL: str = Field(
         default="http://localhost:11434", description="Ollama server base URL"

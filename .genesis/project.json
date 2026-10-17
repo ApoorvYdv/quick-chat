@@ -1,0 +1,1582 @@
+{
+  "schema_version": 2,
+  "project": {
+    "name": "quick-chat",
+    "mode": "adopt",
+    "profile": "prototype",
+    "objective": "Build a production-ready agentic RAG application with high accuracy and answer relevancy: replace the single-case-scoped flow with query rewriting, deterministic-first (LLM fallback) routing to Case, Financial and Procedural agents (structured + hybrid vector search with reranking, top 10 -> top 5), a supervisor that checks context relevance and retries agents up to a limit, grounded answer generation, full logging and LangSmith tracing per agent, and evals for every agent and component; must support cross-case questions such as all cases for a defendant or all REGISTERED cases for a hearing date.",
+    "constraints": [],
+    "non_goals": [],
+    "trust_boundary": "local repository",
+    "created_at": "2026-10-17T16:09:33.474Z",
+    "updated_at": "2026-10-17T16:35:43.741Z"
+  },
+  "policy": {
+    "ponytail": "full",
+    "autonomy": "human-in-the-loop",
+    "learned_rule_promotion": "human-required",
+    "cleanup": "propose-only",
+    "traces": {
+      "storage": "local",
+      "commit_raw": false,
+      "redact_secrets": true
+    }
+  },
+  "lifecycle": {
+    "phase": "build",
+    "status": "active",
+    "active_task": "T01-llm-anthropic",
+    "blocker": null,
+    "next_action": "Human independent review of the T01 diff, then genesis control approve . T01-llm-anthropic --gate independent-review and genesis task complete."
+  },
+  "commands": {
+    "test": {
+      "command": "python -m pytest",
+      "status": "unverified",
+      "source": "pyproject.toml"
+    }
+  },
+  "workflow": {
+    "type": "new-product",
+    "started_at": "2026-10-17T16:09:40.927Z",
+    "spec_check": {
+      "at": "2026-10-17T16:15:39.135Z",
+      "source_hash": "ec742d04956f732fb7cb05d2f7225f14d84b41eac6a4d9381a6b0522a513487f",
+      "requirements": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-2",
+        "AC-3",
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9",
+        "FR-1",
+        "FR-10",
+        "FR-11",
+        "FR-12",
+        "FR-13",
+        "FR-14",
+        "FR-15",
+        "FR-16",
+        "FR-2",
+        "FR-3",
+        "FR-4",
+        "FR-5",
+        "FR-6",
+        "FR-7",
+        "FR-8",
+        "FR-9",
+        "NFR-1",
+        "NFR-2",
+        "NFR-3",
+        "NFR-4",
+        "NFR-5",
+        "NFR-6",
+        "NFR-7",
+        "NFR-8"
+      ]
+    },
+    "plan_check": {
+      "at": "2026-10-17T16:22:27.962Z",
+      "source_hash": "42e1c448832cc66159205d7f26dc3e655d2bc3257aeed41201ce93805c3bb954"
+    },
+    "plan_approval": {
+      "human": "Apoorv",
+      "reason": "Approved the 10-task plan as shown (2026-10-17); start T01",
+      "at": "2026-10-17T16:31:58.274Z",
+      "source_hash": "42e1c448832cc66159205d7f26dc3e655d2bc3257aeed41201ce93805c3bb954"
+    }
+  },
+  "artifacts": [
+    {
+      "id": "SPEC-1",
+      "type": "specification",
+      "path": "SPEC.md",
+      "status": "approved",
+      "requirements": [
+        "AC-1",
+        "AC-10",
+        "AC-11",
+        "AC-12",
+        "AC-2",
+        "AC-3",
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8",
+        "AC-9",
+        "FR-1",
+        "FR-10",
+        "FR-11",
+        "FR-12",
+        "FR-13",
+        "FR-14",
+        "FR-15",
+        "FR-16",
+        "FR-2",
+        "FR-3",
+        "FR-4",
+        "FR-5",
+        "FR-6",
+        "FR-7",
+        "FR-8",
+        "FR-9",
+        "NFR-1",
+        "NFR-2",
+        "NFR-3",
+        "NFR-4",
+        "NFR-5",
+        "NFR-6",
+        "NFR-7",
+        "NFR-8"
+      ],
+      "source_hash": "ec742d04956f732fb7cb05d2f7225f14d84b41eac6a4d9381a6b0522a513487f",
+      "approval": {
+        "human": "Apoorv",
+        "reason": "Approved SPEC.md as written, including default answers to its open questions (2026-10-17)",
+        "at": "2026-10-17T16:20:17.177Z",
+        "source_hash": "ec742d04956f732fb7cb05d2f7225f14d84b41eac6a4d9381a6b0522a513487f"
+      }
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "ASSUMPTION-dcb03251",
+      "text": "Hearing date for appearance-status questions means case_appearance.due_date; case_record.hearing_date is used only when no appearance filter is involved. REGISTERED is a CaseAppearanceStatus, not a CaseStatus.",
+      "status": "open",
+      "source": "core/constants/constants.py CaseAppearanceStatus; core/models/agency/agency.py",
+      "recorded_at": "2026-10-17T16:15:38.836Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "ASSUMPTION-fb711be8",
+      "text": "SPEC.md supersedes PLAN.md S3/S4; PLAN.md S0-S2 work stays as built.",
+      "status": "open",
+      "source": "owner request 2026-10-17",
+      "recorded_at": "2026-10-17T16:15:39.004Z",
+      "paths": [],
+      "tags": []
+    }
+  ],
+  "invariants": [
+    {
+      "id": "INVARIANT-d26fd832",
+      "text": "Tenant isolation, grounding (no fabricated case facts), retrieved content as untrusted data, and no case content in logs/traces remain binding for every agent and tool.",
+      "source": "CLAUDE.md §8, §13, §16, §20",
+      "recorded_at": "2026-10-17T16:10:30.498Z",
+      "paths": [],
+      "tags": []
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DECISION-75684a9f",
+      "title": "Agentic multi-agent flow replaces single-case scoping",
+      "text": "Owner decision 2026-10-17: questions are not always case-scoped. Flow is rewrite -> deterministic routing with LLM fallback -> Case/Financial/Procedural agents -> supervisor relevance check with bounded retries -> grounded generation. Supersedes PLAN.md S3 resolve_case-first design and S4 agent split (Case Details/Procedural Hearings/Financial).",
+      "status": "accepted",
+      "source": "user request 2026-10-17",
+      "recorded_at": "2026-10-17T16:10:30.373Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-c1c87ad6",
+      "title": "LLM provider: Claude via Anthropic",
+      "text": "Rewrite, routing fallback, supervisor grading and answer generation use Claude via Anthropic (adds langchain-anthropic, approval given 2026-10-17 as a spec decision; install still confirmed at task time). Ollama stays a registered provider for local dev.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:12:44.382Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-fa6b64bb",
+      "title": "Hybrid search: Qdrant dense + sparse BM25 with RRF",
+      "text": "Each agency collection holds a dense and a sparse BM25 vector; hybrid query fuses them with RRF in Qdrant, store-side filtered by tenant/case/source_type. Requires recreating every agency collection and re-ingesting.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:12:44.550Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-77aa20e5",
+      "title": "Party-name matching: exact then fuzzy with candidates",
+      "text": "Case-insensitive exact match first, then pg_trgm similarity; multiple plausible people are surfaced as candidates with case numbers, never silently picked.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:12:44.678Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-db99641c",
+      "title": "Cross-case list cap 20",
+      "text": "List answers return at most 20 cases plus the total match count and say explicitly when truncated.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:12:44.807Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-1e65e89a",
+      "title": "Supervisor retries: 2 per agent",
+      "text": "Supervisor may retry an agent at most 2 times with a rewritten sub-query when its context is judged irrelevant; then it answers with what is relevant or reports insufficient data.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:14:06.826Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-2ea1bf2a",
+      "title": "Reranker: local cross-encoder in inference service",
+      "text": "Hybrid top 10 reranked to top 5 by a sentence-transformers CrossEncoder served by quick_chat_inference /rerank; no new dependency; chunk text stays local.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:14:06.998Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-fa550f43",
+      "title": "Eval release gate",
+      "text": "Isolation 100%, citation validity >=98%, faithfulness >=0.85, contextual precision >=0.7, answer relevancy >=0.8, routing accuracy >=95%, structured-tool exact match 100%.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:14:07.129Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-9cd707c2",
+      "title": "Latency target p95 < 12 s non-streaming",
+      "text": "End-to-end non-streaming p95 under 12 s on the dev dataset, per-node latency recorded.",
+      "status": "accepted",
+      "source": "owner answer 2026-10-17",
+      "recorded_at": "2026-10-17T16:14:07.261Z",
+      "paths": [],
+      "tags": []
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "KNOWLEDGE-0436dace",
+      "title": "Current RAG graph is a linear placeholder",
+      "text": "core/rag/graph.py is understand -> resolve_case -> retrieve -> build_context -> generate -> finalize with stub nodes; resolve_case scopes every question to one requested case. No supervisor, agents, rewrite or rerank exist yet.",
+      "source": "src/quick_chat_api/core/rag/graph.py",
+      "tags": [],
+      "recorded_at": "2026-10-17T16:10:29.557Z",
+      "paths": []
+    },
+    {
+      "id": "KNOWLEDGE-1646c414",
+      "title": "Structured queries are case_id-scoped only",
+      "text": "get_payment_summary(session, case_id), get_appearances/get_next_appearance(session, case_id), get_cases_by_number. No party-name, case-status or hearing-date cross-case query exists; cross-case questions need new structured functions.",
+      "source": "src/quick_chat_api/modules/rag/structured/, modules/embedding/retrieval.py",
+      "tags": [],
+      "recorded_at": "2026-10-17T16:10:29.739Z",
+      "paths": []
+    },
+    {
+      "id": "KNOWLEDGE-c71460a0",
+      "title": "Vector search is dense-only, no reranker",
+      "text": "Qdrant collection-per-agency holds dense vectors only (no sparse/BM25). Hybrid search needs a lexical index; adding sparse vectors to existing collections requires recreating them and re-ingesting. core/llm/reranking does not exist yet. 1149 points on southern_ute dev agency.",
+      "source": "core/vectorstore/providers/qdrant.py, CHECKPOINT.md 2026-10-07",
+      "tags": [],
+      "recorded_at": "2026-10-17T16:10:29.869Z",
+      "paths": []
+    },
+    {
+      "id": "KNOWLEDGE-8e1d6bf0",
+      "title": "LLM is local Ollama only today",
+      "text": "Generation registry has one provider (ollama, qwen3:4b per CHECKPOINT S1). PLAN D9 originally named Claude Sonnet default via Anthropic; the anthropic SDK is installed but langchain-anthropic is not.",
+      "source": "core/llm/generation/providers/ollama.py, pyproject.toml, PLAN.md D9",
+      "tags": [],
+      "recorded_at": "2026-10-17T16:10:30.000Z",
+      "paths": []
+    },
+    {
+      "id": "KNOWLEDGE-ca1cffb6",
+      "title": "Domain map conflict for disposition/sanction",
+      "text": "SOURCE_TYPE_GROUPS puts disposition/sanction under outcome, SOURCE_TYPE_DOMAIN under financial. The new Procedural agent owns disposition, sanction (vector) and appearances (structured), which resolves this in favour of a procedural domain.",
+      "source": "core/constants/constants.py, CHECKPOINT.md 2026-10-07",
+      "tags": [],
+      "recorded_at": "2026-10-17T16:10:30.125Z",
+      "paths": []
+    },
+    {
+      "id": "KNOWLEDGE-f8fc02ff",
+      "title": "Tracing and evals baseline",
+      "text": "traced_node fans out to structlog and a redacted LangSmith sink (ids/counts/latency only). evals/datasets is empty; deepeval is configured (.deepeval) but no golden set exists.",
+      "source": "core/rag/tracing.py, evals/",
+      "tags": [],
+      "recorded_at": "2026-10-17T16:10:30.247Z",
+      "paths": []
+    }
+  ],
+  "tasks": [
+    {
+      "id": "SPEC-1",
+      "outcome": "Produce an approved, implementation-ready product specification",
+      "state": "done",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "SPEC.md"
+      ],
+      "dependencies": [],
+      "requirements": [],
+      "gates": [
+        {
+          "id": "independent-review",
+          "command": "",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "human": "Apoorv",
+            "reason": "Approved SPEC.md as written, including default answers to its open questions (2026-10-17)",
+            "source_hash": "cc8180809e0e34b0e26377574dc083b19e1ac846af2e7aae9a02d0e405d983d1",
+            "observed_at": "2026-10-17T16:20:17.177Z"
+          },
+          "kind": "review"
+        }
+      ],
+      "next_action": "Interview the human, record durable context, and replace every placeholder in SPEC.md.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:09:40.928Z",
+      "updated_at": "2026-10-17T16:20:17.177Z"
+    },
+    {
+      "id": "T01-llm-anthropic",
+      "outcome": "Anthropic chat-model provider registered in core/llm/generation (langchain-anthropic, SDK timeouts/retries, answer and router roles); Ollama stays registered",
+      "state": "active",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/llm/generation",
+        "src/quick_chat_api/settings/config.py",
+        ".env.example",
+        "pyproject.toml",
+        "uv.lock",
+        "tests/core/llm/generation"
+      ],
+      "dependencies": [],
+      "requirements": [
+        "NFR-6",
+        "NFR-8"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "core/llm/generation",
+          "environment": "local dev, no network (fake SDK)",
+          "duration": "single session",
+          "observable": "get_chat_model(role) returns a configured Anthropic model with timeout and max_retries from Settings",
+          "gate": "tests"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/llm/generation -q",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T01-llm-anthropic-tests-6147965d-910d-46b3-b953-81dc127821a5.json",
+            "hash": "65df2766287c5279d3442c94f9eba203f68ac273964ff2d29d148a22e9f33c9c",
+            "source_hash": "0389135e43eb1202b012ac8b196ca037b7380c41637ca8d95a04aa94e39be273",
+            "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+            "observed_at": "2026-10-17T16:35:35.176Z"
+          }
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T01-llm-anthropic-lint-6a818381-9041-460c-bcb3-9e01c57b64e1.json",
+            "hash": "df50233c7b7e3f849964771c69401ea714a893a9920c5856bab48c76f72de653",
+            "source_hash": "0389135e43eb1202b012ac8b196ca037b7380c41637ca8d95a04aa94e39be273",
+            "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+            "observed_at": "2026-10-17T16:35:39.070Z"
+          }
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Human independent review of the T01 diff, then genesis control approve . T01-llm-anthropic --gate independent-review and genesis task complete.",
+      "blocker": null,
+      "notes": [
+        "langchain-anthropic 1.7.6 added with owner approval 2026-10-17; lock also bumped langchain-core 1.6.3->1.6.12 and langsmith 0.12.4->0.14.11; full default suite 131 passed."
+      ],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:26.337Z",
+      "updated_at": "2026-10-17T16:35:43.392Z",
+      "base_manifest": {
+        ".DS_Store": "2f1c0ee58bbf4fbd71be458af05c719fb2fdf557ee933a857d244b26a9bae394",
+        ".claude/README.md": "dd9ed511ff485132d7ea3b0d3cb496c1ab88e10784c85a533680e1131fbeecb9",
+        ".claude/rules/architecture.md": "159087a338b44b6fd23ad746973f6e6b48004666ae4444f69bc5934ac08ad1ae",
+        ".claude/rules/coding-patterns.md": "98110c0310f1fd1117fb017ff68e073270cd4103905bc09aa8d0c9346456f2be",
+        ".claude/rules/database.md": "10faf1f4c6b6cb417b73960d32e158cb42d53278ceb220564cc6fbc6aac70fbe",
+        ".claude/rules/rag.md": "6e0e48a43c2db30899235f20064fbf1260ec258343cd63a5e6d92efe171f5bb9",
+        ".claude/settings.json": "23cf8ef1a1acb7800f194e89358a0c723b7f622a882d14b628ecc7f73d5a507a",
+        ".coverage": "a38d9c91b3d52c0023a4adeb61da09d6dd5225a25f722f5b69e328d8098606af",
+        ".env.example": "daecae73a01e60a95a09e9ae1561e7576e6b09601a332d28daf52a30fe0087da",
+        ".gitignore": "9a48b662862c879ccc220997ab3bb02d49855edd84c355ff7c42f7b64322c9dd",
+        ".pre-commit-config.yaml": "1480a3d3d4ce51694fa29847b637dd139aae728dcf41d364478c6691e03e452e",
+        ".python-version": "bf9998d486a94c0f8195375705dc41ef90616a207d5dd9e17a105b6d7b545bf3",
+        ".vscode/settings.json": "cbbf688acc23ba71a17f61dec0010488f789920ed3a7b076cd69f26df955c118",
+        "CHECKPOINT.md": "a4f0bdc84877993c7a3e14e334453c22e91bef39ea9979c718021bf5ce67b18a",
+        "CLAUDE.md": "80ade865c76284fe285d1f92fc2c248042209e562afdd27ce214c971bb10368f",
+        "PLAN.md": "afdb15bb612340480e5a12618ddb18164a96df04380575b3dd81d984a8d5b11c",
+        "README.md": "84e8bb00ea986ef9c60b8554f605fecd0f26380d0b464e0e5f374d4b6b7ff833",
+        "SPEC.md": "ef0002bcf701202aa76c4b09c0ebaa9f908875c0182eef95d261adb953557601",
+        "data_ingestion/.DS_Store": "915fbb7f5ffbed4c17836e54727ebd67120931957aa0c66bdec3da982ffbe3f4",
+        "data_ingestion/add_uuid7_ids.py": "d2868c22aee9efbeae9428b24eec02080949e9edc5ee7bb48297a41922035eb5",
+        "data_ingestion/backfill_embeddings.py": "e966b1136037be28b9e6ecacf329a80c748a1cb7528b7dbf1572c22496930f97",
+        "data_ingestion/create_tables.py": "7c84fde789bc7a839d80862c0e229fb092f616d437531f502c6ea43b0ebe0fa3",
+        "data_ingestion/data/batch_1.json": "ca37571846059443fa1b6c76c42fa091aa490b672fc93d41b4b6cb27e8a9abbe",
+        "data_ingestion/ingest_data.py": "ff801f1716f12e70405dfcb7d9b649259bf2d66df16ae36596c2827737a8fd63",
+        "docker-compose.yml": "f22e7298859e9604eda974deaeaf146d2dddbe15c9c4f0d54a4ce8068bfbd03c",
+        "dockerfile": "6d10c9f3ac99cb8efd8abc2fdb8fb18e31966eb216ba95da22c6d1ae750d994b",
+        "docs/history/CHECKPOINT-2026-09.md": "f23d66dc4e5d76abfc47805fb64e1079baea17dbf4df2d424fed7a61a14cf006",
+        "pyproject.toml": "9ccd7b1ce6cf48d8cb0e57ffd0148daa512fe591dbf64176db10d95b314539a2",
+        "src/quick_chat_api/core/constants/constants.py": "0ab0f3129843542ee79f7bc1fd3d27ef98d0aaf5d6133e1c71c0939580446ba4",
+        "src/quick_chat_api/core/constants/error_response.py": "858d05407ca8151cf4bd5255f93c244aba61beb4d751d4eb7a1d7f07a38dfe7e",
+        "src/quick_chat_api/core/controllers/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/core/controllers/chat_controller.py": "8856214ab329786f4aec9685fbf5b787e392c79dc9fac48e337f6912482fd0db",
+        "src/quick_chat_api/core/controllers/health_controller.py": "f4d9b326bfbbc91eda63bd519302dfb785226eb79f0db468b5578e76e00cbdce",
+        "src/quick_chat_api/core/controllers/ingestion_controller.py": "5491531085483510d90dd07a751671a907d1f2e3ce1fd622b1106daca5a561c7",
+        "src/quick_chat_api/core/database/config.py": "46eedd9e6b63acf9ce58a336d438e45ff9fd355c4f25d03150db5a36e87deca3",
+        "src/quick_chat_api/core/database/connections.py": "645b35426ffd7c4e8b1994c90de906c8ca7cbaab72bd2a07375fada4989305f3",
+        "src/quick_chat_api/core/database/session_context_manager.py": "4cc794f9e2802b73ca7727d3365cd1d8fb1887d1b00d97618819226ac21d1e1d",
+        "src/quick_chat_api/core/llm/__init__.py": "a611bdc6fce45846d023ca863f15ab325f7a23f6fd1066157e78230d80df31d1",
+        "src/quick_chat_api/core/llm/embedding/__init__.py": "0afa8de98c01b95b809aa0302dab0a36706d8461ee001dc658f0084f50263081",
+        "src/quick_chat_api/core/llm/embedding/base.py": "2a99b0bb9c6f23b96234f12edca63ebd3c8f6536769e378171981907b1a5ea2f",
+        "src/quick_chat_api/core/llm/embedding/exceptions.py": "beee51c97fa446a409e1bcdc02744c87ae6fedcb07aa3b03e00128a59755497b",
+        "src/quick_chat_api/core/llm/embedding/factory.py": "3162ba07eb0d5c1d2c81b25a9c159e4c37444b1465ba16cc5a9ad0b310e2e4c2",
+        "src/quick_chat_api/core/llm/embedding/providers/__init__.py": "35f3b0cbb1be9f92b0cca293bce7591c3b9681c52ed66328eb76b6a2ce713de3",
+        "src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py": "609c8234f8dc37ddf5df1e1d8a29f050234ab03e487ac9d5541dbfb9dc1b0ec5",
+        "src/quick_chat_api/core/llm/embedding/providers/remote.py": "a25bc4c2fcc541a2997857c9dec9d21da39bfde3896647ec04a04c5b9c037984",
+        "src/quick_chat_api/core/llm/embedding/registry.py": "d28c117781378a6d1653bfe5c801e6956bbf53748a02696ee89a81dab28a3c76",
+        "src/quick_chat_api/core/llm/generation/__init__.py": "9baa4d00522f0068d22953ba55fa1dd488b5bedad0443d08b6757d6ad8857e2b",
+        "src/quick_chat_api/core/llm/generation/exceptions.py": "7f26eb8a5770d8fc2bd36bcb69da73d35d2ebd7d0d370f01c49781ab7d9cfa20",
+        "src/quick_chat_api/core/llm/generation/factory.py": "255405940b4e550960e0407624c56492f65f1ba096dbdbe783d091463ad14145",
+        "src/quick_chat_api/core/llm/generation/providers/__init__.py": "21f563c0d79c9273748c9b0f5a5a838edc4086938182abe060fc5455e617f89a",
+        "src/quick_chat_api/core/llm/generation/providers/ollama.py": "3a1c47f461ccba3261ab48391c35a2763e6509725287f4fceb3f94590f9a2a32",
+        "src/quick_chat_api/core/llm/generation/registry.py": "f74204cbb21a1ac00b6bb71da908fa58f794a1e9a840f6871e4a361eea62219b",
+        "src/quick_chat_api/core/llm/prompts/__init__.py": "a784a3d41c83e4a9ee5f26334fc8ad69b2f0b3f85e9d7bebfb3d799feabbff7f",
+        "src/quick_chat_api/core/models/__init__.py": "66df08898a5aaf7b51d94c4ad8ecd289a42153287668a2dff1f2c2bf166c1eb0",
+        "src/quick_chat_api/core/models/agency/agency.py": "27b512bb3231449bff70826c1e2a5c185095d57eda9a99b355d4adddc9c1be64",
+        "src/quick_chat_api/core/models/config/config.py": "d52c751ab3b333afddec4d12c4ff1c7b78ea2b3071c7fd158281848710692a52",
+        "src/quick_chat_api/core/rag/checkpointer.py": "ebb5aa4b7b703a154096e2d87d2b554167dff0347921d6816db7c31746ba1d05",
+        "src/quick_chat_api/core/rag/graph.py": "96f0459df3e83a47b7fb9ff9c4d4f07318035a2d3ce9d67d3df0d4d11af75885",
+        "src/quick_chat_api/core/rag/pipeline.py": "430b3d7e737360a87054d060c37f89d5240210626cbd87674b03c3362354ea41",
+        "src/quick_chat_api/core/rag/state.py": "ae8e6185f21823d1cf8c47056d83e6655bf3d1cdd83867d0fea0eb6783e17a4b",
+        "src/quick_chat_api/core/rag/streaming.py": "f6bb91149a12989880610c40fd05492a76b5afe6f31b0cf9750f8fc357137fc6",
+        "src/quick_chat_api/core/rag/tracing.py": "773481314b0928c873aa2d552a9879dd7a14ee8778cb6375f0e6498b864622c6",
+        "src/quick_chat_api/core/schemas/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/core/schemas/chat.py": "84492681de5e586f094601ca6bb2ab6ae2dbb779c0976dbcfbfae4f84d548908",
+        "src/quick_chat_api/core/schemas/health.py": "65157f11297347cb7c1ec6be7e88582f2d06878ee2f71a9dea3f8e7c003f1fa3",
+        "src/quick_chat_api/core/schemas/ingestion.py": "081c36d32684f41460ea829ac74a4472187fd4c8198e1d5a82893d6b25e9a1ee",
+        "src/quick_chat_api/core/vectorstore/__init__.py": "c8ff22331727d41fab6bd72dfc08b49f3846b011488493cd3c9a9fd1751691c9",
+        "src/quick_chat_api/core/vectorstore/base.py": "cd3fab89c9f84d0472dc63a2b5aed6f1ad24147f7381b46f028e0078c726a0d0",
+        "src/quick_chat_api/core/vectorstore/exceptions.py": "705399082d89dd7d761da8ff311d618bbdc18449a333e688c63df630b6106993",
+        "src/quick_chat_api/core/vectorstore/factory.py": "9729a5e8381db4448abee00e37ba5884ea08bc23a6a2264287cb270f2ea415c3",
+        "src/quick_chat_api/core/vectorstore/providers/__init__.py": "95033c4a4232396ec5b4eaf0a002be0138551842dc138869155a016d3495d135",
+        "src/quick_chat_api/core/vectorstore/providers/qdrant.py": "9877f03af4e378eae6dc90969253ea6301fc5641b825ac043473a0d425c95137",
+        "src/quick_chat_api/core/vectorstore/registry.py": "707e74537a13e65d409147d33a59d71cfb25b87a39af7c1cab4835110754df6a",
+        "src/quick_chat_api/main.py": "87b736b2a403ad9d67c4f2d0ff5f1e1947d7c8e2c4c5a5450371be47905af8e0",
+        "src/quick_chat_api/migrations/README.MD": "653a74aea9d02a241131e2ba0de91aff533ef18efbf0f9c3e451b616fa5e5d71",
+        "src/quick_chat_api/migrations/agency/alembic.ini": "cbb45cf00245db956b694ee89c8b9b5107fb8d5d0e230084e01b9aba9c4ea5ab",
+        "src/quick_chat_api/migrations/agency/env.py": "d4228e22d2ba476dc0d12dde118717e567356d4f1062d8e95dce3573ce00c52e",
+        "src/quick_chat_api/migrations/agency/script.py.mako": "1067a9c9669a4786dd46fb5188b97f0a3a7c8a2858fd13acedb145d7ebc39542",
+        "src/quick_chat_api/migrations/agency/versions/2026_09_06_041453-1987d3241f40_add_initial_agency_schema_structure.py": "5de138db59a8922073058c165eee1d7dd0e82bacc6968f94c0df922efeadab93",
+        "src/quick_chat_api/migrations/config/alembic.ini": "28ae1314559b7b14a05c216e6d987905445597dd88307b18155e0f89c2e5fb73",
+        "src/quick_chat_api/migrations/config/env.py": "eaea1fde0b96c1d949a971b34c4788a71e39735f6b235d6e663e3c8d07d8b151",
+        "src/quick_chat_api/migrations/config/script.py.mako": "1067a9c9669a4786dd46fb5188b97f0a3a7c8a2858fd13acedb145d7ebc39542",
+        "src/quick_chat_api/migrations/config/versions/2026_09_06_005411-e7acfa4231a3_add_inital_config_schema_structure.py": "a31296b01157016af3dee0bb7911232532de962b9e573bbdaf7b7a9032df7d8f",
+        "src/quick_chat_api/migrations/run_migrations.py": "121d7d10dbfb706ff1574a7cf9a14258f9435fdf8037240f26211cdf6636df1e",
+        "src/quick_chat_api/migrations/utils.py": "ac3b4de64d414305d69073374adc6d2080094d6f6e33e6f2047e0d4f27075ff3",
+        "src/quick_chat_api/modules/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/modules/embedding/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/modules/embedding/chunking/__init__.py": "23d11f9b7ea4eb029972cef95affeda232fd0346be029f5dbdf13c819cce2549",
+        "src/quick_chat_api/modules/embedding/chunking/base.py": "9b3a70485b3328c26fcd4d08afef89c910dd12eba32a48d437089a94856c48b2",
+        "src/quick_chat_api/modules/embedding/chunking/exceptions.py": "9e1d68d1ba4eaa81f6f92a9085670dfcaffb281bff5b27ac7882240f25c9db38",
+        "src/quick_chat_api/modules/embedding/chunking/factory.py": "2e3b0e2cf0252b7a2767c961ed6c2ea763ccd1084aac3ae7cb420c26a5ead18e",
+        "src/quick_chat_api/modules/embedding/chunking/providers/__init__.py": "7cff28c9baeffbf4b83162d660b19c179ce8924b97fe75042d0e800f8c35b06f",
+        "src/quick_chat_api/modules/embedding/chunking/providers/structured.py": "d0a66cbbc36cbe66c0f61821897a896380ac2ddfcc2fa4e61daf5fe20071c542",
+        "src/quick_chat_api/modules/embedding/chunking/registry.py": "0fd50d2b3880b1660e9869854c00597b870974ea038b0f6ba4c2e2881055c6c4",
+        "src/quick_chat_api/modules/embedding/db_adapters.py": "9eafd3a5bf3789b4c29bb17cc7bc08a2723cab3e611a1bb696782a0fe6bb34b9",
+        "src/quick_chat_api/modules/embedding/ingestion_service.py": "6d5b78192d48b3f1ade7aa5058d10b38e578394158a0aa621747704fc3cd421b",
+        "src/quick_chat_api/modules/embedding/projectors/__init__.py": "46e8bb0efef1964923da2d6a8441a74e728b38a2c1828c2c7d1b92d2d2a89d5b",
+        "src/quick_chat_api/modules/embedding/projectors/_formatting.py": "bca2fddec40116f3baedd7a1302b4f9cc5be763e635b45e339c698f3482f0aa2",
+        "src/quick_chat_api/modules/embedding/projectors/base.py": "75ec1269d3537203581bb911bc114d9f371a5289e62e60a3af77d1c7d9ea2d53",
+        "src/quick_chat_api/modules/embedding/projectors/exceptions.py": "72416e0d18cafe2476ff731cee28774eba1fa4b87e15f82871514dd60f57f9e7",
+        "src/quick_chat_api/modules/embedding/projectors/factory.py": "4184ff189f3fea5fdce5913ff77e10bac01d36799d91e643cfc630ed396894a8",
+        "src/quick_chat_api/modules/embedding/projectors/providers/__init__.py": "de72ee82a1a95eed3dcb12c44300ae4e1d23363d08615628227df32e0bd8a208",
+        "src/quick_chat_api/modules/embedding/projectors/providers/address.py": "85b60e18c68b2c18916999596ec78a255df6e5325a3cefd20b9c89c620b47960",
+        "src/quick_chat_api/modules/embedding/projectors/providers/appearance.py": "9b459f1f0969910e2f48c9dc34f76d0c83397761f3f2506b11b612a46b941cdf",
+        "src/quick_chat_api/modules/embedding/projectors/providers/case.py": "c5092beecb30171de7bbd621ba95191dfad7cb0e8f26743c6399ad9b2510f271",
+        "src/quick_chat_api/modules/embedding/projectors/providers/case_summary.py": "e8f16d51c22211206ea97610bd139d1ccb50a6a23235a75ac49a05c16bd6f98b",
+        "src/quick_chat_api/modules/embedding/projectors/providers/charge.py": "30842e1cbf755b838a98317b4d968a1ef9a5995c1b23f75b3b10d4d615df9c44",
+        "src/quick_chat_api/modules/embedding/projectors/providers/criminal.py": "829c42c277ef498886e4c13f867ab998c658486ce3fcc761494096220552d2de",
+        "src/quick_chat_api/modules/embedding/projectors/providers/disposition.py": "393ca1f8b415842ca72485f9fdda7942f072438e231b9d9347e146b81c6c9404",
+        "src/quick_chat_api/modules/embedding/projectors/providers/party.py": "481488691509297f5df504ea5fce68f9563f1e152bf3d2df13ef5a4d4ab5ccf4",
+        "src/quick_chat_api/modules/embedding/projectors/providers/payment.py": "d7be5c0fdd8de86e71db8be295816a07e4e5b2c04f7dfb420ee0871fa78d949e",
+        "src/quick_chat_api/modules/embedding/projectors/providers/sanction.py": "6f310758e6356632426a9db4cf22a48c1f47686a991f472c9edb713738dfc2d4",
+        "src/quick_chat_api/modules/embedding/projectors/providers/vehicle.py": "62a45da8760db87161e3a805a6d5ef7e24be1efa084e14a3ac39af97248a6422",
+        "src/quick_chat_api/modules/embedding/projectors/registry.py": "09b26b2f01bc1c501fd44881caf9278f940a7903f19d56b24678c10097aa64d5",
+        "src/quick_chat_api/modules/embedding/retrieval.py": "3f41355d5c25e5948cc4b9f302931cde62c10bdb380c32f8a9cc2a2a0aa62c75",
+        "src/quick_chat_api/modules/rag/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/modules/rag/structured/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/modules/rag/structured/case.py": "f63a0b44265ed5ad455b789bdb21d440b70844298bb6301717df6ffe8497af57",
+        "src/quick_chat_api/modules/rag/structured/financial.py": "bdaf84840c1c92570d00676fd9166fb172114089470beb7683c1e0fc1d85c299",
+        "src/quick_chat_api/modules/rag/structured/hearings.py": "8d908487bedaccbd8439ce6e54bf57704d5c4d11e0953fb5680adf629d0bc0a4",
+        "src/quick_chat_api/routers/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_api/routers/chat_router.py": "42dfb079f18814ff87cba55b7c2387f570fffd5f85549da7c0c5cb0453b80ab2",
+        "src/quick_chat_api/routers/health_router.py": "8dbb1d9042e3c423ed329697faef5d997137c870804577f97b02b01fd217473b",
+        "src/quick_chat_api/routers/ingestion_router.py": "974574be8fcc146322282622c8fe5a816f694b12c2bb362afa088f8c350d6a5d",
+        "src/quick_chat_api/settings/config.py": "783455f8edab1275586ab42cfd02b11521380de171c8881a34de3405719ac9f7",
+        "src/quick_chat_api/utils/common/logger.py": "d3fa6624dc59a053af2701d947c6bfec91c32826941134171aa563f99732f9d1",
+        "src/quick_chat_api/utils/context.py": "75a980e741607202d2b00cd99028b40fc8b4d84d8ec1ec42039beb02b6c56df8",
+        "src/quick_chat_api/utils/dependencies.py": "58b40f6e441f1534d74660e96e39739d0e426ee2782ed8da5fa2328f54d93237",
+        "src/quick_chat_api/utils/helper.py": "284896a06690b5d99551bde844f50dcb64f6f9caaa274a9d58f51e4cbca8284e",
+        "src/quick_chat_inference/__init__.py": "78fb5f112b9e331e6d45cc7ba20c364344137c40dce44296fbdbe7854ba5bea2",
+        "src/quick_chat_inference/main.py": "9c979ae2b1235b6a912cf0789181c185b6783e708131eb2942bed85e7d0212c5",
+        "tests/conftest.py": "3326bc802175dc5cb8a2a11d6a8ef36ce9ad60e6f6888da84d92812f91984887",
+        "tests/contract/test_data_ingestion_scripts.py": "3d78175beafe1454d78308914aaa9d9823f035d81c6c5439fa7881bf816b9a89",
+        "tests/contract/test_frozen_surface.py": "fe9f101ba00ee1404edb30540b0996644c8ae52da27c79538a29e7826f372989",
+        "tests/contract/test_schema_parity.py": "51dab003a8e697f59d889277eb97507663a51cb40fbdfe6e6bb46a0619bd9276",
+        "tests/core/database/test_is_active_filter.py": "3d2921c19be3b5f153c306de3102e1b7de104351eaed1d107e8bd585cc3f44d6",
+        "tests/core/llm/embedding/test_local_sentence_transformer.py": "563e82d102c68c2941223eb94ab10054aa0f99ddfca1cdd580de9b63689fa1b1",
+        "tests/core/rag/test_agency_checkpointer.py": "f5a5e8fd05dc02135d1f010416482deeaf604ccbf10d8628bee1790645c5c6f2",
+        "tests/core/rag/test_checkpoint_state.py": "d616f0384cce3842f9eb511b8a649925d71d0fdca3681a976253d8be8ad3ea35",
+        "tests/core/rag/test_concurrent_tenants.py": "124613390228e208d48836f3526e07ea7757b222039035988f1e05089135a3ae",
+        "tests/core/rag/test_tracing.py": "cf9eeeb1cb9222b3fc6ff23ab5fdb19a2b0cceb2c61a74cd2b772d8eb4e380d9",
+        "tests/core/vectorstore/test_qdrant_store.py": "57910a0088b5370fc68bec93eda05501d71938b140a0d90d685a04dd4ff41e1d",
+        "tests/fakes.py": "aec7083f714e733fdb8fd135e92400423d536f9e519e9736b0e1ece0632d3571",
+        "tests/inference/test_remote_embedding.py": "d7becdef983fb55fe43b5d2fb158f7a4614d6bd1f0600767cac467c1538d26d3",
+        "tests/modules/embedding/chunking/test_structured_chunker.py": "1ade89c7db863d5e675334600bbacce6a77c10379826968124525ae5992deabd",
+        "tests/modules/embedding/projectors/test_projectors.py": "ca390d69e206550a990a0eecbd734ebfd7649f46d5e906944580b9ca64676fe9",
+        "tests/modules/embedding/projectors/test_s2_projectors.py": "14b72f9e98b52947bcad73f0d1a9c3671d7f5d29428f3afc78481cca04274267",
+        "tests/modules/embedding/test_db_adapters.py": "b1eb4e2d39c4f76f4b3b9799a8a430a9eabff1f481624ef75bdb71690efc8b10",
+        "tests/modules/embedding/test_ingestion_service.py": "3f7a2f5d60fc78a11306cc6a6b6001d73af0d63d5fabb5b78bb13da57a42a053",
+        "tests/modules/embedding/test_retrieval.py": "f92f4e918995ffa4177236f6742a76192eed6e5109182132d1d7eebfeecdbc4b",
+        "tests/modules/rag/test_structured.py": "37482e97cf077bf95f4951566c294c966e57aa03d108da4d297c220b118c4928",
+        "tests/modules/rag/test_structured_integration.py": "628f8895d4398ce8190a87c84feb780e3d9c997cf5a3142e29f78fe8168de12b",
+        "tests/routers/test_chat_router.py": "c59a607fbecbda8ac848483d62f9f550cb7d711263159365f1c7da7f7bb1bf1b",
+        "tests/routers/test_health_router.py": "4ecc765b48f6d9774ae2799f0351d224330481fafb04aa5981755c5693dee536",
+        "tests/routers/test_ingestion_router.py": "131f1e810e6ebf73dabdb576c2a02fd9854cd7e716bb05c15c772e52aafcc65a",
+        "tests/utils/test_helper_timezone.py": "477555232affda3f407612ab1bde51592ef93e591103ce7b3b2524376089f455",
+        "tests/utils/test_logger.py": "d6460352e8c7893a5ddaf34d6d0bb1608b2b6e4beb70eda397bb32bd300582cb",
+        "uv.lock": "ffac87896ed8ff80c4844211475e3c8576ab88b744f04b3e561fb94bafd37456"
+      }
+    },
+    {
+      "id": "T02-hybrid-search",
+      "outcome": "Qdrant agency collections store dense + sparse BM25 vectors; hybrid query fuses with RRF store-side, returns 10 candidates, filtered by agency collection, case ids and source types; ingestion writes both vectors",
+      "state": "queued",
+      "risk": "high",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/vectorstore",
+        "src/quick_chat_api/modules/embedding/retrieval.py",
+        "src/quick_chat_api/modules/embedding/ingestion_service.py",
+        "src/quick_chat_api/settings/config.py",
+        "tests/core/vectorstore",
+        "tests/modules/embedding"
+      ],
+      "dependencies": [],
+      "requirements": [
+        "FR-8",
+        "FR-16",
+        "AC-5"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "core/vectorstore, modules/embedding",
+          "environment": "local compose Qdrant v1.19.1 via testcontainers",
+          "duration": "single session",
+          "observable": "hybrid query returns <=10 points, all from the agency collection and matching case/source-type filters",
+          "gate": "integration"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/vectorstore tests/modules/embedding -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "integration",
+          "kind": "command",
+          "command": "uv run pytest -m integration tests/core/vectorstore -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:26.539Z",
+      "updated_at": "2026-10-17T16:22:26.540Z"
+    },
+    {
+      "id": "T03-reranker",
+      "outcome": "core/llm/reranking (Interface+Registry+Factory: cross_encoder, remote, none) plus /rerank on quick_chat_inference; keeps top 5 above RERANK_MIN_SCORE, never widens scope",
+      "state": "queued",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/llm/reranking",
+        "src/quick_chat_inference",
+        "src/quick_chat_api/settings/config.py",
+        ".env.example",
+        "tests/core/llm/reranking",
+        "tests/inference"
+      ],
+      "dependencies": [],
+      "requirements": [
+        "FR-9",
+        "AC-5"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "core/llm/reranking, quick_chat_inference",
+          "environment": "local dev, fake cross-encoder",
+          "duration": "single session",
+          "observable": "rerank of 10 candidates returns <=5 ordered by score, drops below threshold, ids subset of input",
+          "gate": "tests"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/llm/reranking tests/inference -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:26.687Z",
+      "updated_at": "2026-10-17T16:22:26.688Z"
+    },
+    {
+      "id": "T04-structured-cross-case",
+      "outcome": "Tenant-scoped structured tools: party-name lookup (exact then pg_trgm, candidates), case-attribute filter, appearance status+date filter, payments for resolved cases; lists capped at 20 with total and truncated flag",
+      "state": "queued",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/modules/rag/structured",
+        "tests/modules/rag"
+      ],
+      "dependencies": [],
+      "requirements": [
+        "FR-4",
+        "FR-6",
+        "FR-7",
+        "AC-1",
+        "AC-2",
+        "AC-8",
+        "NFR-1"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "modules/rag/structured",
+          "environment": "throwaway Postgres schema via testcontainers",
+          "duration": "single session",
+          "observable": "name and REGISTERED+date queries equal SQL ground truth; 25 seeded matches return 20 with total 25 and truncated=true; second agency rows never returned",
+          "gate": "integration"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/modules/rag -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "integration",
+          "kind": "command",
+          "command": "uv run pytest -m integration tests/modules/rag -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:26.897Z",
+      "updated_at": "2026-10-17T16:22:26.897Z"
+    },
+    {
+      "id": "T05-understand-route",
+      "outcome": "Rewrite node (entity extraction + per-agent sub-queries, history-aware) and deterministic router with LLM structured-output fallback on no/conflicting route; route source recorded; versioned prompts",
+      "state": "queued",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/rag/nodes",
+        "src/quick_chat_api/core/rag/routing.py",
+        "src/quick_chat_api/core/llm/prompts",
+        "tests/core/rag"
+      ],
+      "dependencies": [
+        "T01-llm-anthropic"
+      ],
+      "requirements": [
+        "FR-1",
+        "FR-2",
+        "NFR-3"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "core/rag routing and rewrite",
+          "environment": "local dev, fake chat model",
+          "duration": "single session",
+          "observable": "case-number and keyword questions route by rule with zero LLM calls; ambiguous question calls fallback once; injected text in history cannot change route",
+          "gate": "tests"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/rag -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:27.051Z",
+      "updated_at": "2026-10-17T16:22:27.051Z"
+    },
+    {
+      "id": "T06-agents",
+      "outcome": "Case, Financial and Procedural agents built on T02-T05 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs",
+      "state": "queued",
+      "risk": "high",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/rag/agents",
+        "tests/core/rag/agents"
+      ],
+      "dependencies": [
+        "T02-hybrid-search",
+        "T03-reranker",
+        "T04-structured-cross-case",
+        "T05-understand-route"
+      ],
+      "requirements": [
+        "FR-3",
+        "FR-5",
+        "FR-6",
+        "FR-7",
+        "AC-3",
+        "NFR-1"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "core/rag/agents",
+          "environment": "local dev, fake store/reranker/chat model",
+          "duration": "single session",
+          "observable": "payments+hearings question runs Financial and Procedural concurrently; a tool call with an out-of-scope case id is rejected",
+          "gate": "tests"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/rag/agents -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:27.202Z",
+      "updated_at": "2026-10-17T16:22:27.203Z"
+    },
+    {
+      "id": "T07-supervisor-context-generate",
+      "outcome": "Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty",
+      "state": "queued",
+      "risk": "high",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/rag/nodes",
+        "src/quick_chat_api/modules/rag/context_builder.py",
+        "src/quick_chat_api/core/llm/prompts",
+        "tests/core/rag",
+        "tests/modules/rag"
+      ],
+      "dependencies": [
+        "T06-agents"
+      ],
+      "requirements": [
+        "FR-10",
+        "FR-11",
+        "FR-12",
+        "AC-4",
+        "AC-7",
+        "AC-8",
+        "NFR-2",
+        "NFR-3",
+        "NFR-6"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "supervisor, context, generate nodes",
+          "environment": "local dev, fake chat model",
+          "duration": "single session",
+          "observable": "irrelevant stub agent retried exactly 2 times then insufficient; empty evidence makes zero generate calls; foreign citation id dropped",
+          "gate": "tests"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/rag tests/modules/rag -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:27.370Z",
+      "updated_at": "2026-10-17T16:22:27.370Z"
+    },
+    {
+      "id": "T08-graph-api-tracing",
+      "outcome": "Graph rewired (rewrite -> route -> agents -> supervisor -> context -> generate -> finalize) behind unchanged /ask and /cases/{id}/ask JSON+SSE contracts; nested redacted LangSmith runs and structlog per step; cross-tenant and concurrency tests",
+      "state": "queued",
+      "risk": "high",
+      "owner": null,
+      "scope": [
+        "src/quick_chat_api/core/rag",
+        "src/quick_chat_api/core/controllers/chat_controller.py",
+        "src/quick_chat_api/core/schemas/chat.py",
+        "src/quick_chat_api/routers/chat_router.py",
+        "src/quick_chat_api/core/constants/error_response.py",
+        "tests/core/rag",
+        "tests/routers"
+      ],
+      "dependencies": [
+        "T07-supervisor-context-generate"
+      ],
+      "requirements": [
+        "FR-13",
+        "FR-14",
+        "AC-6",
+        "AC-9",
+        "NFR-1",
+        "NFR-4"
+      ],
+      "inputs": [],
+      "environment": [],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "graph, chat API, tracing",
+          "environment": "local dev with testcontainers, LangSmith sink faked",
+          "duration": "single session",
+          "observable": "one request yields one parent run with child runs per step and no case content; two concurrent agencies see zero foreign evidence",
+          "gate": "integration"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/core/rag tests/routers -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "integration",
+          "kind": "command",
+          "command": "uv run pytest -m integration tests/core/rag -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:27.524Z",
+      "updated_at": "2026-10-17T16:22:27.524Z"
+    },
+    {
+      "id": "T09-evals",
+      "outcome": "Golden datasets (southern_ute + synthetic second agency, dev/holdout split) and one eval command scoring rewrite, router, each structured tool, hybrid retrieval, reranker, supervisor, each agent and the end-to-end pipeline, with gate thresholds and optional LangSmith experiments",
+      "state": "queued",
+      "risk": "medium",
+      "owner": null,
+      "scope": [
+        "evals",
+        "tests/evals",
+        "README.md"
+      ],
+      "dependencies": [
+        "T08-graph-api-tracing"
+      ],
+      "requirements": [
+        "FR-15",
+        "NFR-5",
+        "NFR-7",
+        "AC-10",
+        "AC-11"
+      ],
+      "inputs": [],
+      "environment": [
+        "ANTHROPIC_API_KEY"
+      ],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent",
+          "scope": "evals",
+          "environment": "local compose dev data + Anthropic judge",
+          "duration": "up to 30 minutes",
+          "observable": "command prints per-agent and per-component scores and exits non-zero when any NFR-7 threshold is missed",
+          "gate": "components"
+        }
+      ],
+      "gates": [
+        {
+          "id": "tests",
+          "kind": "command",
+          "command": "uv run pytest tests/evals -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "components",
+          "kind": "command",
+          "command": "uv run python -m evals.run --suite components --gate",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:27.670Z",
+      "updated_at": "2026-10-17T16:22:27.671Z"
+    },
+    {
+      "id": "T10-reindex-acceptance",
+      "outcome": "southern_ute collection recreated with dense+sparse and re-ingested via backfill_embeddings; end-to-end acceptance (AC-1, AC-2, AC-11) and quality gate run on real dev data; models and data_ingestion untouched",
+      "state": "queued",
+      "risk": "high",
+      "owner": null,
+      "scope": [
+        "tests/acceptance",
+        "PLAN.md",
+        "CHECKPOINT.md"
+      ],
+      "dependencies": [
+        "T09-evals"
+      ],
+      "requirements": [
+        "FR-16",
+        "AC-1",
+        "AC-2",
+        "AC-11",
+        "AC-12"
+      ],
+      "inputs": [],
+      "environment": [
+        "ANTHROPIC_API_KEY"
+      ],
+      "scenarios": [
+        {
+          "id": "s1",
+          "actor": "coding agent with owner-authorized re-ingest",
+          "scope": "southern_ute dev agency",
+          "environment": "local compose Postgres + Qdrant + inference service",
+          "duration": "up to 1 hour",
+          "observable": "defendant and REGISTERED-date questions match SQL ground truth; e2e p95 < 12 s; frozen diff empty",
+          "gate": "e2e"
+        }
+      ],
+      "gates": [
+        {
+          "id": "suite",
+          "kind": "command",
+          "command": "uv run pytest -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "acceptance",
+          "kind": "command",
+          "command": "uv run pytest -m integration tests/acceptance -q",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "e2e",
+          "kind": "command",
+          "command": "uv run python -m evals.run --suite e2e --gate --latency",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "frozen",
+          "kind": "command",
+          "command": "git diff --exit-code 7c26fcd -- src/quick_chat_api/core/models data_ingestion",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "lint",
+          "kind": "command",
+          "command": "uv run ruff check src tests evals && uv run mypy src",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        },
+        {
+          "id": "independent-review",
+          "kind": "review",
+          "command": "",
+          "mandatory": true,
+          "status": "pending",
+          "evidence": null
+        }
+      ],
+      "next_action": "Run the task pre-flight.",
+      "blocker": null,
+      "notes": [],
+      "failures": [],
+      "limitations": [],
+      "created_at": "2026-10-17T16:22:27.816Z",
+      "updated_at": "2026-10-17T16:22:27.817Z"
+    }
+  ],
+  "learning_proposals": [],
+  "cleanup_proposals": [],
+  "controls": [],
+  "attempts": [
+    {
+      "id": "c372cec0-b699-4310-8ccf-82a28462ba65",
+      "task": "T01-llm-anthropic",
+      "kind": "gate",
+      "command": "uv run pytest tests/core/llm/generation -q",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 56049,
+      "child_pid": 56106,
+      "started_at": "2026-10-17T16:33:50.674Z",
+      "status": "passed",
+      "before_hash": "ee793a2d2970274f224762740f65fab95411a53db076cce5e5bb77c7cb5ccdba",
+      "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-17T16:34:02.197Z"
+    },
+    {
+      "id": "78baac4f-0945-4540-b757-49a9df0a08b2",
+      "task": "T01-llm-anthropic",
+      "kind": "gate",
+      "command": "uv run ruff check src tests evals && uv run mypy src",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 56049,
+      "child_pid": 56486,
+      "started_at": "2026-10-17T16:34:02.421Z",
+      "status": "failed",
+      "before_hash": "ee793a2d2970274f224762740f65fab95411a53db076cce5e5bb77c7cb5ccdba",
+      "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": "command-failed",
+      "ended_at": "2026-10-17T16:34:18.342Z"
+    },
+    {
+      "id": "41b91bd0-2265-4304-a672-8ca53076184c",
+      "task": "T01-llm-anthropic",
+      "kind": "gate",
+      "command": "uv run pytest tests/core/llm/generation -q",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 56869,
+      "child_pid": 56971,
+      "started_at": "2026-10-17T16:34:46.104Z",
+      "status": "passed",
+      "before_hash": "a01eb39b99b6aca9fda147d517adaf76db9a58d6ed27f588ffa329ddb060f2e0",
+      "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-17T16:34:57.611Z"
+    },
+    {
+      "id": "ff25fefb-90ef-48b0-91c7-42a75a231d90",
+      "task": "T01-llm-anthropic",
+      "kind": "gate",
+      "command": "uv run ruff check src tests evals && uv run mypy src",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 56869,
+      "child_pid": 57397,
+      "started_at": "2026-10-17T16:34:57.851Z",
+      "status": "failed",
+      "before_hash": "a01eb39b99b6aca9fda147d517adaf76db9a58d6ed27f588ffa329ddb060f2e0",
+      "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": "command-failed",
+      "ended_at": "2026-10-17T16:35:01.558Z"
+    },
+    {
+      "id": "6147965d-910d-46b3-b953-81dc127821a5",
+      "task": "T01-llm-anthropic",
+      "kind": "gate",
+      "command": "uv run pytest tests/core/llm/generation -q",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 57765,
+      "child_pid": 57867,
+      "started_at": "2026-10-17T16:35:24.231Z",
+      "status": "passed",
+      "before_hash": "0389135e43eb1202b012ac8b196ca037b7380c41637ca8d95a04aa94e39be273",
+      "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-17T16:35:35.176Z"
+    },
+    {
+      "id": "6a818381-9041-460c-bcb3-9e01c57b64e1",
+      "task": "T01-llm-anthropic",
+      "kind": "gate",
+      "command": "uv run ruff check src tests evals && uv run mypy src",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 57765,
+      "child_pid": 58283,
+      "started_at": "2026-10-17T16:35:35.389Z",
+      "status": "passed",
+      "before_hash": "0389135e43eb1202b012ac8b196ca037b7380c41637ca8d95a04aa94e39be273",
+      "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-17T16:35:39.070Z"
+    }
+  ],
+  "authorizations": [],
+  "experiments": [],
+  "incidents": [],
+  "discovery": {
+    "files": 308,
+    "languages": [
+      "python"
+    ],
+    "extensions": {
+      ".10/101716204994622285": 1,
+      ".10/10205142955422607145": 1,
+      ".10/10404295970636289452": 1,
+      ".10/10770928364871175973": 1,
+      ".10/10785736126768982545": 1,
+      ".10/11061476570989121495": 1,
+      ".10/1110700886444200113": 1,
+      ".10/11286380020229171002": 1,
+      ".10/11582055920737909767": 1,
+      ".10/11674388721749427779": 1,
+      ".10/12044672147253211079": 1,
+      ".10/12047227104253498253": 1,
+      ".10/12070899846166668975": 1,
+      ".10/12408885125714812400": 1,
+      ".10/12705173843392926226": 1,
+      ".10/12764247213337999266": 1,
+      ".10/12923853379342974201": 1,
+      ".10/1296616440585491121": 1,
+      ".10/13007174730860975065": 1,
+      ".10/13014336712390577782": 1,
+      ".10/13060419835259816431": 1,
+      ".10/13613027865815497025": 1,
+      ".10/13621409908594096852": 1,
+      ".10/14439676199664106097": 1,
+      ".10/14604490647167819182": 1,
+      ".10/14739996566156072569": 1,
+      ".10/14906564681992937085": 1,
+      ".10/14921981854624727679": 1,
+      ".10/15080960183600995994": 1,
+      ".10/15210012626150530958": 1,
+      ".10/15400826155610566": 1,
+      ".10/15797407968675646691": 1,
+      ".10/16025156410839080952": 1,
+      ".10/1626820473164773601": 1,
+      ".10/16475652857932602414": 1,
+      ".10/17376599392774927152": 1,
+      ".10/17444528860787502204": 1,
+      ".10/17625814217384612008": 1,
+      ".10/17631553611822883257": 1,
+      ".10/17742918625407014766": 1,
+      ".10/1779875678099565032": 1,
+      ".10/18257097835279326906": 1,
+      ".10/18306123836741489347": 1,
+      ".10/1830657625136568074": 1,
+      ".10/1938202089174783237": 1,
+      ".10/2206824299603889384": 1,
+      ".10/2253358153150115580": 1,
+      ".10/2273200562446876177": 1,
+      ".10/2283856995740483290": 1,
+      ".10/2380120901292052039": 1,
+      ".10/2801105782463200639": 1,
+      ".10/2865323008926344119": 1,
+      ".10/3120208341606436972": 1,
+      ".10/3149314420499531604": 1,
+      ".10/3441482549282784441": 1,
+      ".10/3630640469496862016": 1,
+      ".10/3650595948401329367": 1,
+      ".10/3735411715051452964": 1,
+      ".10/3868255857226960858": 1,
+      ".10/3984223912528925449": 1,
+      ".10/3989359430735158048": 1,
+      ".10/3990378735324573272": 1,
+      ".10/4187821870961502009": 1,
+      ".10/440701098364950597": 1,
+      ".10/4429879760857961131": 1,
+      ".10/4489415989708235904": 1,
+      ".10/4513272761485889584": 1,
+      ".10/4567282584953661364": 1,
+      ".10/4962830000223409956": 1,
+      ".10/5566916268280115233": 1,
+      ".10/5750562308080052676": 1,
+      ".10/5814047647177646558": 1,
+      ".10/587297980312552471": 1,
+      ".10/595463025023990500": 1,
+      ".10/6044070434498396468": 1,
+      ".10/6114315626375700724": 1,
+      ".10/6291085787747466198": 1,
+      ".10/6375482830800274442": 1,
+      ".10/6570440707576335182": 1,
+      ".10/6893381603566150329": 1,
+      ".10/7000732109668229593": 1,
+      ".10/7002807600657425801": 1,
+      ".10/7199553876729828926": 1,
+      ".10/7305980393319605882": 1,
+      ".10/780305262533490514": 1,
+      ".10/8042501491493113874": 1,
+      ".10/8652025264028980375": 1,
+      ".10/8712728286418130160": 1,
+      ".10/8865733488063308966": 1,
+      ".10/9070743000463522174": 1,
+      ".10/9120626996781007231": 1,
+      ".10/985540083292128061": 1,
+      ".10/9906309140770702548": 1,
+      ".10/9922911537083095741": 1,
+      ".coverage": 1,
+      ".db": 16,
+      ".db-shm": 16,
+      ".db-wal": 16,
+      ".env": 1,
+      ".example": 1,
+      ".gitignore": 4,
+      ".ini": 2,
+      ".json": 4,
+      ".lock": 1,
+      ".mako": 2,
+      ".md": 12,
+      ".py": 128,
+      ".pytest_cache/v/cache/lastfailed": 1,
+      ".pytest_cache/v/cache/nodeids": 1,
+      ".python-version": 1,
+      ".tag": 3,
+      ".toml": 1,
+      ".yaml": 1,
+      ".yml": 1,
+      "[none]": 1
+    },
+    "commands": {
+      "test": {
+        "command": "python -m pytest",
+        "status": "unverified",
+        "source": "pyproject.toml"
+      }
+    },
+    "legacy_genesis": false,
+    "revision": {
+      "commit": "7c26fcd9644551b5600a639f5f096c65879b704d",
+      "dirty": false,
+      "source_hash": "429f5fff8c2177914cda58c7289a94088627b0d87b580e488847d7c7fabc3043"
+    }
+  },
+  "checkpoint": {
+    "at": "2026-10-17T16:35:43.702Z",
+    "revision": {
+      "commit": "7c26fcd9644551b5600a639f5f096c65879b704d",
+      "dirty": true,
+      "source_hash": "0389135e43eb1202b012ac8b196ca037b7380c41637ca8d95a04aa94e39be273"
+    },
+    "active_task": "T01-llm-anthropic",
+    "next_action": "Human independent review of the T01 diff, then genesis control approve . T01-llm-anthropic --gate independent-review and genesis task complete."
+  },
+  "legacy": null
+}

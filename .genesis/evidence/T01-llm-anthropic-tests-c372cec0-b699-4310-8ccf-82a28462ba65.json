@@ -1,0 +1,30 @@
+{
+  "task": "T01-llm-anthropic",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "c372cec0-b699-4310-8ccf-82a28462ba65",
+  "command": "uv run pytest tests/core/llm/generation -q",
+  "started_at": "2026-10-17T16:33:50.674Z",
+  "observed_at": "2026-10-17T16:34:02.197Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n......                                                                   [100%]Running teardown with pytest sessionfinish...\n\n6 passed in 8.00s\n",
+  "stderr": "/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "7c26fcd9644551b5600a639f5f096c65879b704d",
+    "dirty": true
+  },
+  "source_hash": "ee793a2d2970274f224762740f65fab95411a53db076cce5e5bb77c7cb5ccdba",
+  "before_hash": "ee793a2d2970274f224762740f65fab95411a53db076cce5e5bb77c7cb5ccdba",
+  "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "3acd3a92869c7c7656c5b1e5f8fef9859fb3c1d83166e52d64d3b6ef21b55a87"
+}

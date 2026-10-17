@@ -1,0 +1,30 @@
+{
+  "task": "T01-llm-anthropic",
+  "gate": "lint",
+  "kind": "command",
+  "attempt": "ff25fefb-90ef-48b0-91c7-42a75a231d90",
+  "command": "uv run ruff check src tests evals && uv run mypy src",
+  "started_at": "2026-10-17T16:34:57.851Z",
+  "observed_at": "2026-10-17T16:35:01.558Z",
+  "exit_code": 1,
+  "signal": null,
+  "stdout": "All checks passed!\nsrc/quick_chat_api/core/llm/generation/providers/anthropic.py:22: error: Missing named argument \"stop\" for \"ChatAnthropic\"  [call-arg]\nsrc/quick_chat_api/core/llm/generation/providers/anthropic.py:22: note: \"ChatAnthropic\" defined in \"langchain_anthropic.chat_models\"\nFound 1 error in 1 file (checked 93 source files)\n",
+  "stderr": "",
+  "failure": "command-failed",
+  "receipt": null,
+  "revision": {
+    "commit": "7c26fcd9644551b5600a639f5f096c65879b704d",
+    "dirty": true
+  },
+  "source_hash": "a01eb39b99b6aca9fda147d517adaf76db9a58d6ed27f588ffa329ddb060f2e0",
+  "before_hash": "a01eb39b99b6aca9fda147d517adaf76db9a58d6ed27f588ffa329ddb060f2e0",
+  "config_hash": "7ff477f16d4037077ae9631785fa28f588b9f1219566eb6f474602ffa1b3876e",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "0b91f97044032d45eea993d73c5302d73054b11535779ccf07b99cac254e5ea1"
+}
