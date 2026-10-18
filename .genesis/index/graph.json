@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "project": "quick-chat",
-  "revision": "8512f45c52ce33c578e4e0379b5f0c5fdbad29d8",
+  "revision": "cb8ce61f77eec87b89a7623d6354bef826832e09",
   "sourceHash": "2b67d775065c01bcf66b6324870d6942fa80ce0749c534026683bef8ac6f85a2",
   "provenance": {
     "tool": "genesis-graphizer",
@@ -14894,11 +14894,11 @@
     {
       "type": "calls",
       "source": "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:case_matches",
-      "target": "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result",
+      "target": "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result",
       "tier": "ambiguous",
       "candidates": [
-        "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result",
-        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result"
+        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result",
+        "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -18154,11 +18154,11 @@
     {
       "type": "calls",
       "source": "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-      "target": "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result",
+      "target": "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result",
       "tier": "ambiguous",
       "candidates": [
-        "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result",
-        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result"
+        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result",
+        "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -19042,11 +19042,11 @@
     {
       "type": "calls",
       "source": "symbol:tests/core/rag/agents/test_agents.py#function:test_ambiguous_party_short_circuits_with_clarification.by_party",
-      "target": "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList",
+      "target": "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList",
       "tier": "ambiguous",
       "candidates": [
-        "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList",
-        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList"
+        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList",
+        "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -19376,11 +19376,11 @@
     {
       "type": "calls",
       "source": "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope.by_appearance",
-      "target": "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList",
+      "target": "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList",
       "tier": "ambiguous",
       "candidates": [
-        "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList",
-        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList"
+        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList",
+        "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -23305,11 +23305,11 @@
     {
       "type": "calls",
       "source": "symbol:tests/modules/rag/test_cross_case.py#function:test_blank_party_name_queries_nothing",
-      "target": "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList",
+      "target": "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList",
       "tier": "ambiguous",
       "candidates": [
-        "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList",
-        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList"
+        "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList",
+        "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList"
       ],
       "resolved": false,
       "confidence": 0.3,

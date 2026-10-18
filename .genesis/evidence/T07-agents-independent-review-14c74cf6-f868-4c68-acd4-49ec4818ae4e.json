@@ -1,0 +1,13 @@
+{
+  "task": "T07-agents",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "14c74cf6-f868-4c68-acd4-49ec4818ae4e",
+  "human": "Apoorv",
+  "reason": "Re-approving T07 after scope widening; diff unchanged",
+  "observed_at": "2026-10-18T19:49:30.216Z",
+  "source_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+  "config_hash": "2189fc2efece6952f6114dbf32b7b9a61e47b5924d16815efbdb21ac03beb0a5",
+  "reviewed_proofs": "82dad32f55b9e0892b62c310a700be7166d109c5fcb78212320bc4b052e358ed",
+  "hash": "55c2b35d16b54c02abbf9c34bd2b764a22bbf8bd3979ca21dc078b22db3b8280"
+}

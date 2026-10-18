@@ -1326,7 +1326,7 @@ digraph genesis {
   "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:_call_tool" -> "symbol:tests/core/rag/agents/test_agents.py#function:ScriptedModel.ainvoke" [label="calls"];
   "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:build_tool.run" -> "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:data_block" [label="calls"];
   "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:case_matches" -> "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:fact_evidence" [label="calls"];
-  "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:case_matches" -> "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result" [label="calls"];
+  "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:case_matches" -> "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result" [label="calls"];
   "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:fact_evidence" -> "symbol:src/quick_chat_api/core/rag/state.py#class:EvidenceItem" [label="calls"];
   "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:run_agent" -> "symbol:src/quick_chat_api/core/llm/generation/factory.py#function:get_chat_model" [label="calls"];
   "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:run_agent" -> "symbol:src/quick_chat_api/core/rag/agents/runner.py#function:_call_tool" [label="calls"];
@@ -1633,7 +1633,7 @@ digraph genesis {
   "symbol:src/quick_chat_api/routers/health_router.py#function:readyz" -> "symbol:src/quick_chat_api/core/schemas/health.py#class:HealthResponse" [label="calls"];
   "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index" -> "symbol:src/quick_chat_api/core/schemas/ingestion.py#class:CaseIndexDeleteResponse" [label="calls"];
   "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index" -> "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index" [label="calls"];
-  "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case" -> "symbol:src/quick_chat_api/core/schemas/ingestion.py#function:CaseIngestionResponse.from_result" [label="calls"];
+  "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case" -> "symbol:src/quick_chat_api/core/rag/agents/schemas.py#function:CaseList.from_result" [label="calls"];
   "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case" -> "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case" [label="calls"];
   "symbol:src/quick_chat_api/settings/config.py#function:get_settings" -> "symbol:src/quick_chat_api/settings/config.py#class:Settings" [label="calls"];
   "symbol:src/quick_chat_api/utils/common/logger.py#function:configure_logging" -> "symbol:src/quick_chat_api/utils/common/logger.py#function:build_formatter" [label="calls"];
@@ -1719,7 +1719,7 @@ digraph genesis {
   "symbol:tests/core/rag/agents/test_agents.py#function:_script.get_chat_model.Router.bind_tools" -> "symbol:tests/core/rag/agents/test_agents.py#class:ScriptedModel" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_ambiguous_party_short_circuits_with_clarification" -> "symbol:src/quick_chat_api/core/rag/agents/fanout.py#function:make_agents" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_ambiguous_party_short_circuits_with_clarification" -> "symbol:tests/core/rag/agents/test_agents.py#function:_script" [label="calls"];
-  "symbol:tests/core/rag/agents/test_agents.py#function:test_ambiguous_party_short_circuits_with_clarification.by_party" -> "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList" [label="calls"];
+  "symbol:tests/core/rag/agents/test_agents.py#function:test_ambiguous_party_short_circuits_with_clarification.by_party" -> "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_ambiguous_party_short_circuits_with_clarification.by_party" -> "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:PartyCandidate" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_case_first_scopes_dependents" -> "symbol:src/quick_chat_api/core/rag/agents/fanout.py#function:make_agents" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_case_first_scopes_dependents" -> "symbol:tests/core/rag/agents/test_agents.py#function:_script" [label="calls"];
@@ -1749,7 +1749,7 @@ digraph genesis {
   "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope" -> "symbol:src/quick_chat_api/core/rag/agents/procedural.py#function:run_procedural_agent" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope" -> "symbol:src/quick_chat_api/core/rag/agents/scope.py#class:CaseScope" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope" -> "symbol:tests/core/rag/agents/test_agents.py#function:_script" [label="calls"];
-  "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope.by_appearance" -> "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList" [label="calls"];
+  "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope.by_appearance" -> "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_procedural_filter_is_agency_wide_without_scope.by_appearance" -> "symbol:tests/core/rag/agents/test_agents.py#function:_ref" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_unknown_anchor_skips_dependents" -> "symbol:src/quick_chat_api/core/rag/agents/fanout.py#function:make_agents" [label="calls"];
   "symbol:tests/core/rag/agents/test_agents.py#function:test_unknown_anchor_skips_dependents" -> "symbol:tests/core/rag/agents/test_agents.py#function:_script" [label="calls"];
@@ -2094,7 +2094,7 @@ digraph genesis {
   "symbol:tests/modules/rag/test_cross_case_integration.py#function:test_lists_do_not_cross_tenants" -> "symbol:tests/modules/rag/test_cross_case_integration.py#function:_case" [label="calls"];
   "symbol:tests/modules/rag/test_cross_case_integration.py#function:test_lists_do_not_cross_tenants" -> "symbol:tests/modules/rag/test_cross_case_integration.py#function:_engine" [label="calls"];
   "symbol:tests/modules/rag/test_cross_case_integration.py#function:test_lists_do_not_cross_tenants" -> "symbol:tests/modules/rag/test_cross_case_integration.py#function:_party" [label="calls"];
-  "symbol:tests/modules/rag/test_cross_case.py#function:test_blank_party_name_queries_nothing" -> "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#class:CaseList" [label="calls"];
+  "symbol:tests/modules/rag/test_cross_case.py#function:test_blank_party_name_queries_nothing" -> "symbol:src/quick_chat_api/core/rag/agents/schemas.py#class:CaseList" [label="calls"];
   "symbol:tests/modules/rag/test_cross_case.py#function:test_blank_party_name_queries_nothing" -> "symbol:src/quick_chat_api/modules/rag/structured/cross_case.py#function:find_cases_by_party" [label="calls"];
   "symbol:tests/modules/rag/test_cross_case.py#function:test_blank_party_name_queries_nothing" -> "symbol:tests/modules/rag/test_structured.py#function:_session" [label="calls"];
   "symbol:tests/modules/rag/test_cross_case.py#function:test_payment_summaries_reject_ids_outside_tenant" -> "symbol:src/quick_chat_api/modules/rag/structured/financial.py#function:get_payment_summaries" [label="calls"];

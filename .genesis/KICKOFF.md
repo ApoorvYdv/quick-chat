@@ -4,11 +4,11 @@
 
 - objective: Build a production-ready agentic RAG application with high accuracy and answer relevancy: replace the single-case-scoped flow with query rewriting, deterministic-first (LLM fallback) routing to Case, Financial and Procedural agents (structured + hybrid vector search with reranking, top 10 -> top 5), a supervisor that checks context relevance and retries agents up to a limit, grounded answer generation, full logging and LangSmith tracing per agent, and evals for every agent and component; must support cross-case questions such as all cases for a defendant or all REGISTERED cases for a hearing date.
 - phase/status: build/active
-- active task: T07-agents — Case, Financial and Procedural agents built on T02-T06 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs
+- active task: T08-supervisor-context-generate — Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty
 - blocker: none
 - next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pass, lint:pass, independent-review:pass
+- gates: tests:pending, lint:pending, independent-review:pending
 - recent failures: none
 
 ## Resume
@@ -17,9 +17,7 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: 92ec8cb06c98b23963069dacfb2eec500000bd389f11d42e592f66cef57934cd. Use --since only after receiving that full packet; kickoff is not the packet.
-- DECISION-3310fd98: T07 agents: LLM tool-calling loop, typed outputs, no graph wiring
+Context fingerprint: 561ced397e8a695382eae0c46014f609a12d63fd46fa3fc48fa66e91bf85da4f. Use --since only after receiving that full packet; kickoff is not the packet.
 - DECISION-75684a9f: Agentic multi-agent flow replaces single-case scoping
-- DECISION-db99641c: Cross-case list cap 20
 Applicable invariants, active rules, authorization and proof references are in the packet. Truncated summaries are retrieval pointers, not the full evidence.
 Reuse fresh gates with --reuse. Reconcile interrupted attempts before replaying commands. Report state → evidence → blocker → next action; checkpoint before stopping.

@@ -4,7 +4,7 @@
 
 - workflow: new-product
 - phase: build
-- plan approval: Apoorv at 2026-10-18T19:05:58.089Z
+- plan approval: Apoorv at 2026-10-18T19:48:12.775Z
 
 ## Tasks
 
@@ -58,15 +58,15 @@
 
 ### T07-agents — Case, Financial and Procedural agents built on T02-T06 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs
 
-- state/risk: active / high
+- state/risk: done / high
 - requirements: FR-3, FR-5, FR-6, FR-7, AC-3, NFR-1
-- scope: src/quick_chat_api/core/rag/agents, tests/core/rag/agents
+- scope: src/quick_chat_api/core/rag/agents, tests/core/rag/agents, .env.example, src/quick_chat_api/core/constants/constants.py, src/quick_chat_api/core/llm/prompts/__init__.py, src/quick_chat_api/core/rag/state.py, src/quick_chat_api/settings/config.py, tests/modules/rag/test_structured.py
 - gates: tests: uv run pytest tests/core/rag/agents -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T08-supervisor-context-generate — Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty
 
-- state/risk: queued / high
+- state/risk: active / high
 - requirements: FR-10, FR-11, FR-12, AC-4, AC-7, AC-8, NFR-2, NFR-3, NFR-6
 - scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/modules/rag/context_builder.py, src/quick_chat_api/core/llm/prompts, tests/core/rag, tests/modules/rag
 - gates: tests: uv run pytest tests/core/rag tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
