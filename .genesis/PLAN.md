@@ -4,7 +4,7 @@
 
 - workflow: new-product
 - phase: build
-- plan approval: ApoorvYdv at 2026-10-18T06:28:16.588Z
+- plan approval: ApoorvYdv at 2026-10-18T18:47:48.093Z
 
 ## Tasks
 
@@ -34,23 +34,23 @@
 
 ### T04-embedding-async — EmbeddingProvider async: embed_documents/embed_query async, count_tokens async batch API, local via asyncio.to_thread, remote via httpx.AsyncClient with lazy first-use /info check; all callers and inference service updated
 
-- state/risk: active / medium
+- state/risk: done / medium
 - requirements: FR-8, AC-5
 - scope: src/quick_chat_api/core/llm/embedding, src/quick_chat_inference, src/quick_chat_api/modules/embedding, tests/fakes.py, tests/core/llm/embedding, tests/modules/embedding, tests/inference
-- gates: tests: uv run pytest tests/core/llm/embedding tests/modules/embedding tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/llm/embedding tests/modules/embedding tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T05-structured-cross-case — Tenant-scoped structured tools: party-name lookup (exact then pg_trgm, candidates), case-attribute filter, appearance status+date filter, payments for resolved cases; lists capped at 20 with total and truncated flag
 
-- state/risk: queued / medium
+- state/risk: done / medium
 - requirements: FR-4, FR-6, FR-7, AC-1, AC-2, AC-8, NFR-1
-- scope: src/quick_chat_api/modules/rag/structured, tests/modules/rag
-- gates: tests: uv run pytest tests/modules/rag -q, integration: uv run pytest -m integration tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- scope: src/quick_chat_api/modules/rag/structured, tests/modules/rag, src/quick_chat_api/settings/config.py, .env.example, src/quick_chat_api/core/llm/embedding, src/quick_chat_inference, src/quick_chat_api/modules/embedding, tests/fakes.py, tests/core/llm/embedding, tests/modules/embedding, tests/inference
+- gates: tests: uv run pytest tests/modules/rag -q, integration: uv run pytest -m integration tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T06-understand-route — Rewrite node (entity extraction + per-agent sub-queries, history-aware) and deterministic router with LLM structured-output fallback on no/conflicting route; route source recorded; versioned prompts
 
-- state/risk: queued / medium
+- state/risk: active / medium
 - requirements: FR-1, FR-2, NFR-3
 - scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/core/rag/routing.py, src/quick_chat_api/core/llm/prompts, tests/core/rag
 - gates: tests: uv run pytest tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending

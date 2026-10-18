@@ -1,0 +1,30 @@
+{
+  "task": "T04-embedding-async",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "3e3cb40b-4a18-4be5-a0d1-19ddc035d690",
+  "command": "uv run pytest tests/core/llm/embedding tests/modules/embedding tests/inference -q",
+  "started_at": "2026-10-18T18:41:30.617Z",
+  "observed_at": "2026-10-18T18:41:39.878Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n..................................................................       [100%]Running teardown with pytest sessionfinish...\n\n=============================== warnings summary ===============================\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n  /Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n66 passed, 8 warnings in 5.72s\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "4a406cc9929edac95c17b4979470f46f092a1d32",
+    "dirty": true
+  },
+  "source_hash": "ad7a55cda0eee1f88b3c7d978ab2beba9deae61f2da57bbd7e0dfb6328f6cd48",
+  "before_hash": "ad7a55cda0eee1f88b3c7d978ab2beba9deae61f2da57bbd7e0dfb6328f6cd48",
+  "config_hash": "537ae7dde154a7716a8cbf6a5f832d5bc832b16c6283928d35eccedf5339cc02",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "568cbb9792993fc6b2f77229da5f0975cd2393803e81582fa6f7d40a1d16af7e"
+}

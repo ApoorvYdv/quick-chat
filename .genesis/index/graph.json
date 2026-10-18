@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "project": "quick-chat",
-  "revision": "c46b64b8426a1c7937573264d4b50f7d96d0517a",
+  "revision": "4a406cc9929edac95c17b4979470f46f092a1d32",
   "sourceHash": "7d3e2badb33659e5b1872101a16c10ba92241909e094bd8ba80af22c9dd8a46c",
   "provenance": {
     "tool": "genesis-graphizer",
@@ -21488,11 +21488,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -26263,9 +26263,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -26280,9 +26280,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26319,9 +26319,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -26336,9 +26336,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26397,9 +26397,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26436,9 +26436,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26475,9 +26475,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26514,9 +26514,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26553,9 +26553,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_by_filter",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_by_filter",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_by_filter",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_by_filter",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_by_filter",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_by_filter",
         "symbol:tests/fakes.py#function:FakeVectorStore.delete_by_filter"
       ],
       "resolved": false,
@@ -26579,9 +26579,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.delete_points"
       ],
       "resolved": false,
@@ -26618,9 +26618,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26657,9 +26657,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26696,9 +26696,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.list_points"
       ],
       "resolved": false,
@@ -26722,9 +26722,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.recreate_collection",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.recreate_collection",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.recreate_collection",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.recreate_collection",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.recreate_collection",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.recreate_collection",
         "symbol:tests/fakes.py#function:FakeVectorStore.recreate_collection"
       ],
       "resolved": false,
@@ -26761,9 +26761,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -26800,9 +26800,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -26839,9 +26839,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26865,9 +26865,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -26904,9 +26904,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -28545,11 +28545,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.delete_case_index",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.delete_case_index",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -28576,9 +28576,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.list_points"
       ],
       "resolved": false,
@@ -28654,11 +28654,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -28817,11 +28817,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -28962,11 +28962,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -28980,9 +28980,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -29005,11 +29005,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -29022,11 +29022,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -29040,9 +29040,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -29065,11 +29065,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -29083,9 +29083,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -29550,11 +29550,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -34442,9 +34442,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -34459,9 +34459,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34498,9 +34498,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -34515,9 +34515,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34576,9 +34576,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34615,9 +34615,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34654,9 +34654,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34693,9 +34693,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34732,9 +34732,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_by_filter",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_by_filter",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_by_filter",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_by_filter",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_by_filter",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_by_filter",
         "symbol:tests/fakes.py#function:FakeVectorStore.delete_by_filter"
       ],
       "resolved": false,
@@ -34758,9 +34758,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.delete_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.delete_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.delete_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.delete_points"
       ],
       "resolved": false,
@@ -34797,9 +34797,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34836,9 +34836,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -34875,9 +34875,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.list_points"
       ],
       "resolved": false,
@@ -34901,9 +34901,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.recreate_collection",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.recreate_collection",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.recreate_collection",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.recreate_collection",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.recreate_collection",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.recreate_collection",
         "symbol:tests/fakes.py#function:FakeVectorStore.recreate_collection"
       ],
       "resolved": false,
@@ -34940,9 +34940,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -34979,9 +34979,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.search",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.search",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.search",
         "symbol:tests/fakes.py#function:FakeVectorStore.search"
       ],
       "resolved": false,
@@ -35018,9 +35018,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -35044,9 +35044,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -35083,9 +35083,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -36724,11 +36724,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.delete_case_index",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.delete_case_index",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -36755,9 +36755,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.list_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.list_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.list_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.list_points"
       ],
       "resolved": false,
@@ -36833,11 +36833,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -36996,11 +36996,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -37141,11 +37141,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -37159,9 +37159,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -37184,11 +37184,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -37201,11 +37201,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -37219,9 +37219,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,
@@ -37244,11 +37244,11 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/rag/graph.py#function:retrieve",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -37262,9 +37262,9 @@
       "candidates": [
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
+        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/base.py#function:VectorStore.upsert_points",
         "symbol:src/quick_chat_api/core/vectorstore/providers/qdrant.py#function:QdrantVectorStore.upsert_points",
-        "symbol:.claude/worktrees/clever-hofstadter-1e4dfc/tests/fakes.py#function:FakeVectorStore.upsert_points",
         "symbol:tests/fakes.py#function:FakeVectorStore.upsert_points"
       ],
       "resolved": false,

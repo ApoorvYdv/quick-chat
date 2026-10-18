@@ -1,0 +1,30 @@
+{
+  "task": "T05-structured-cross-case",
+  "gate": "integration",
+  "kind": "command",
+  "attempt": "011ef65a-c35c-4d52-ae95-9b876fe65cae",
+  "command": "uv run pytest -m integration tests/modules/rag -q",
+  "started_at": "2026-10-18T18:42:51.146Z",
+  "observed_at": "2026-10-18T18:43:07.638Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n...                                                                      [100%]Running teardown with pytest sessionfinish...\n\n3 passed in 13.64s\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "4a406cc9929edac95c17b4979470f46f092a1d32",
+    "dirty": true
+  },
+  "source_hash": "64645397a9bf4540a3d05e49ee8e69c6f9f9ec234c6223086ea87e6788d8ae60",
+  "before_hash": "64645397a9bf4540a3d05e49ee8e69c6f9f9ec234c6223086ea87e6788d8ae60",
+  "config_hash": "b8751d984afc8ab4901fe9a4d4aed885b1d64a8e9bd2bccd0a6be3c5c6e8208a",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "cceaaa969e2cc8964049b98b1f433b06573b410dde21457b53ec6eba6c7e6d0c"
+}

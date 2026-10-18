@@ -1,0 +1,13 @@
+{
+  "task": "T04-embedding-async",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "c6da12d4-ab8a-4554-bea7-4b79472f734c",
+  "human": "ApoorvYdv",
+  "reason": "Reviewed the T04 diff and proof; approved",
+  "observed_at": "2026-10-18T18:42:16.972Z",
+  "source_hash": "ad7a55cda0eee1f88b3c7d978ab2beba9deae61f2da57bbd7e0dfb6328f6cd48",
+  "config_hash": "537ae7dde154a7716a8cbf6a5f832d5bc832b16c6283928d35eccedf5339cc02",
+  "reviewed_proofs": "9f2cd2b6c06c35b4f0eda2fcce60e180bbfa776451ded2b42f95a37728734cba",
+  "hash": "6db521a26039da3c3f8cf90f4228aa6b45a37935c46d57588d4eca72ee3e03bb"
+}

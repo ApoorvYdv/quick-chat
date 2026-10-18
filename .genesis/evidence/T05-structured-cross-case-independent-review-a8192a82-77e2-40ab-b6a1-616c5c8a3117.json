@@ -1,0 +1,13 @@
+{
+  "task": "T05-structured-cross-case",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "a8192a82-77e2-40ab-b6a1-616c5c8a3117",
+  "human": "ApoorvYdv",
+  "reason": "Re-approving T05 after scope widening; diff unchanged",
+  "observed_at": "2026-10-18T18:49:26.162Z",
+  "source_hash": "64645397a9bf4540a3d05e49ee8e69c6f9f9ec234c6223086ea87e6788d8ae60",
+  "config_hash": "b1326b85e7e68d9dec795fb0da672571903601f55e64b11eb808cfd0bb7be2cf",
+  "reviewed_proofs": "84bbdd1028a4f9ddc0d19e4de3cfde1dc5a083fc67448f53eadd984bf445184f",
+  "hash": "bbcb027a768c1e149a2378e2bd94f6684220aaf8deef97ab2a38ba64b9988ed9"
+}
