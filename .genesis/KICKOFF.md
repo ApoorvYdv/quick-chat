@@ -4,11 +4,11 @@
 
 - objective: Build a production-ready agentic RAG application with high accuracy and answer relevancy: replace the single-case-scoped flow with query rewriting, deterministic-first (LLM fallback) routing to Case, Financial and Procedural agents (structured + hybrid vector search with reranking, top 10 -> top 5), a supervisor that checks context relevance and retries agents up to a limit, grounded answer generation, full logging and LangSmith tracing per agent, and evals for every agent and component; must support cross-case questions such as all cases for a defendant or all REGISTERED cases for a hearing date.
 - phase/status: build/active
-- active task: T02-hybrid-search — Qdrant agency collections store dense + sparse BM25 vectors; hybrid query fuses with RRF store-side, returns 10 candidates, filtered by agency collection, case ids and source types; ingestion writes both vectors
+- active task: T03-reranker — core/llm/reranking (Interface+Registry+Factory: cross_encoder, remote, none) plus /rerank on quick_chat_inference; keeps top 5 above RERANK_MIN_SCORE, never widens scope
 - blocker: none
 - next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pass, integration:pass, lint:pass, independent-review:pass
+- gates: tests:pending, lint:pending, independent-review:pending
 - recent failures: none
 
 ## Resume
@@ -17,7 +17,9 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: b8bad8102445243cf5e506aeacd817b8d32ee0963a43e3ecf86e578ed2f3bd7d. Use --since only after receiving that full packet; kickoff is not the packet.
-- ASSUMPTION-fb711be8: SPEC.md supersedes PLAN.md S3/S4; PLAN.md S0-S2 work stays as built.
+Context fingerprint: 7fff48b88f7ce8dcf6521cde5f12a22f2857d085b2c8ead389ac6b22ebdfbb71. Use --since only after receiving that full packet; kickoff is not the packet.
+- DECISION-2ea1bf2a: Reranker: local cross-encoder in inference service
+- KNOWLEDGE-c71460a0: Vector search is dense-only, no reranker
+- KNOWLEDGE-0436dace: Current RAG graph is a linear placeholder
 Applicable invariants, active rules, authorization and proof references are in the packet. Truncated summaries are retrieval pointers, not the full evidence.
 Reuse fresh gates with --reuse. Reconcile interrupted attempts before replaying commands. Report state → evidence → blocker → next action; checkpoint before stopping.

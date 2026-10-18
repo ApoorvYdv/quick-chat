@@ -1,0 +1,30 @@
+{
+  "task": "T02-hybrid-search",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "9cc1062e-a054-42c3-be98-f58ffb612a6c",
+  "command": "uv run pytest tests/core/vectorstore tests/modules/embedding -q",
+  "started_at": "2026-10-18T06:05:52.135Z",
+  "observed_at": "2026-10-18T06:06:01.747Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n........................................................................ [ 96%]\n...                                                                      [100%]Running teardown with pytest sessionfinish...\n\n=============================== warnings summary ===============================\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\n  /Users/apoorv/Developer/python-projects/quick-chat/tests/core/vectorstore/test_qdrant_hybrid_integration.py:7: DeprecationWarning: testcontainers.qdrant is deprecated, use testcontainers.community.qdrant instead\n    from testcontainers.qdrant import QdrantContainer\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n75 passed, 8 warnings in 6.08s\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "6240ef97fa38dda360b2410294d3b0464c87ac8c",
+    "dirty": true
+  },
+  "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+  "before_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+  "config_hash": "97477f212d0aecb7cc1cf93cffc5803fa25a2998ddf0a98ed8a081164299b433",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "b5c662c7a78e0e830c6bfee232942b4c6a2c4b658b27b44723402adbfd094add"
+}

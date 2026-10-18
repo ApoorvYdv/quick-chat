@@ -4,7 +4,7 @@
 
 - workflow: new-product
 - phase: build
-- plan approval: Apoorv at 2026-10-17T16:31:58.274Z
+- plan approval: Apoorv at 2026-10-18T06:04:57.348Z
 
 ## Tasks
 
@@ -18,15 +18,15 @@
 
 ### T02-hybrid-search — Qdrant agency collections store dense + sparse BM25 vectors; hybrid query fuses with RRF store-side, returns 10 candidates, filtered by agency collection, case ids and source types; ingestion writes both vectors
 
-- state/risk: active / high
+- state/risk: done / high
 - requirements: FR-8, FR-16, AC-5
-- scope: src/quick_chat_api/core/vectorstore, src/quick_chat_api/modules/embedding/retrieval.py, src/quick_chat_api/modules/embedding/ingestion_service.py, src/quick_chat_api/settings/config.py, tests/core/vectorstore, tests/modules/embedding
+- scope: src/quick_chat_api/core/vectorstore, src/quick_chat_api/modules/embedding/retrieval.py, src/quick_chat_api/modules/embedding/ingestion_service.py, src/quick_chat_api/settings/config.py, tests/core/vectorstore, tests/modules/embedding, .env.example, tests/fakes.py, tests/core/llm/generation/test_providers.py
 - gates: tests: uv run pytest tests/core/vectorstore tests/modules/embedding -q, integration: uv run pytest -m integration tests/core/vectorstore -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T03-reranker — core/llm/reranking (Interface+Registry+Factory: cross_encoder, remote, none) plus /rerank on quick_chat_inference; keeps top 5 above RERANK_MIN_SCORE, never widens scope
 
-- state/risk: queued / medium
+- state/risk: active / medium
 - requirements: FR-9, AC-5
 - scope: src/quick_chat_api/core/llm/reranking, src/quick_chat_inference, src/quick_chat_api/settings/config.py, .env.example, tests/core/llm/reranking, tests/inference
 - gates: tests: uv run pytest tests/core/llm/reranking tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
