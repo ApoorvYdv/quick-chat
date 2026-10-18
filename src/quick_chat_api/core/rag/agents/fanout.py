@@ -72,7 +72,7 @@ def make_agents() -> Node:
         outputs.update(zip(rest, done, strict=True))
         return _result(outputs, scope)
 
-    return traced_node("agents")(agents)
+    return agents
 
 
 def _result(

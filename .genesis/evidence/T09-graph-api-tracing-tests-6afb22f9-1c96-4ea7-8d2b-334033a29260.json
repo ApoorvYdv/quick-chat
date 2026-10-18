@@ -1,0 +1,30 @@
+{
+  "task": "T09-graph-api-tracing",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "6afb22f9-1c96-4ea7-8d2b-334033a29260",
+  "command": "uv run pytest tests/core/rag tests/routers -q",
+  "started_at": "2026-10-18T20:27:33.842Z",
+  "observed_at": "2026-10-18T20:27:44.642Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n................................................                         [100%]Running teardown with pytest sessionfinish...\n\n=============================== warnings summary ===============================\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n  /Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n48 passed, 8 warnings in 7.00s\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "a14a5b5bec1bd3ba5216241759e2c27960a5069e",
+    "dirty": true
+  },
+  "source_hash": "119de01890a97752008c154fb85b30695468ae8c70eba92aa4bc4d30900aa7fd",
+  "before_hash": "119de01890a97752008c154fb85b30695468ae8c70eba92aa4bc4d30900aa7fd",
+  "config_hash": "7215d7dc82490d767deb159def726e4929abd04324a9a8cf030e099b3af0a48c",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "9cd8439aa4fa2bb4e7a668bf8a44b49c58c3616ac597c2b333ab892af992d728"
+}

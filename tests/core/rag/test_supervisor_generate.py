@@ -10,6 +10,7 @@ from quick_chat_api.core.rag.nodes import make_generate, make_supervisor
 from quick_chat_api.core.rag.nodes.supervisor import Grade, Rewrite
 from quick_chat_api.core.rag.state import EvidenceItem
 from quick_chat_api.modules.rag.context_builder import build_context
+from tests.core.rag.offline import OFFLINE_NODES
 
 CASE = uuid4()
 
@@ -45,7 +46,8 @@ async def test_irrelevant_agent_retried_exactly_twice_then_insufficient() -> Non
 
     graph = build_graph(
         nodes={
-            "retrieve": retrieve,
+            **OFFLINE_NODES,
+            "agents": retrieve,
             "supervisor": make_supervisor(never, RunnableLambda(rewrite)),
             "generate": generate,
         }

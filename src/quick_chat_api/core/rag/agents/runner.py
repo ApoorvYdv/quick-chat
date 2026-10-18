@@ -28,6 +28,7 @@ from quick_chat_api.core.llm.reranking.base import RerankCandidate
 from quick_chat_api.core.rag.agents.schemas import AgentOutput, CaseList
 from quick_chat_api.core.rag.agents.scope import CaseScope, CaseScopeViolation
 from quick_chat_api.core.rag.state import EvidenceItem
+from quick_chat_api.core.rag.tracing import annotate, span
 from quick_chat_api.modules.embedding.retrieval import retrieve
 from quick_chat_api.modules.rag.structured.cross_case import CaseList as CrossCaseList
 from quick_chat_api.settings.config import settings
@@ -96,7 +97,7 @@ async def _call_tool(tools: dict[str, StructuredTool], call: ToolCall) -> ToolMe
         content = f"Unknown tool: {call['name']}"
     else:
         try:
-            content = await tool.ainvoke(call["args"])
+            content = await span(f"tool.{tool.name}")(tool.ainvoke)(call["args"])
         except ValidationError:
             content = INVALID_ARGS
     return ToolMessage(content=content, tool_call_id=call["id"])
@@ -142,18 +143,32 @@ async def run_agent(
     )
 
 
+@span("retrieval", "retriever")
+async def _retrieve(*args: Any, **kwargs: Any) -> list[Any]:
+    chunks = await retrieve(*args, **kwargs)
+    annotate(retrieved=len(chunks))
+    return chunks
+
+
+@span("rerank", "chain")
+async def _rerank(query: str, candidates: list[RerankCandidate]) -> list[Any]:
+    ranked = await get_reranker().rerank(query, candidates)
+    annotate(candidates=len(candidates), kept=len(ranked))
+    return ranked
+
+
 async def search_reranked(
     query: str, source_types: list[str], scope: CaseScope, out: AgentOutput
 ) -> str:
     """Hybrid search (store-side filtered by scope and source type) then rerank; kept chunks join the evidence."""
-    chunks = await retrieve(
+    chunks = await _retrieve(
         RequestContext.agency,
         query,
         case_record_ids=list(scope.ids) if scope.ids else None,
         source_types=source_types,
     )
     by_id = {str(c.id): c for c in chunks}
-    ranked = await get_reranker().rerank(
+    ranked = await _rerank(
         query, [RerankCandidate(str(c.id), c.content) for c in chunks]
     )
     seen = {e.chunk_id for e in out.evidence}

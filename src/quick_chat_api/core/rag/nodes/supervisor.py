@@ -137,4 +137,4 @@ def make_supervisor(
 
 
 def after_supervisor(state: PipelineState) -> str:
-    return "retrieve" if state.get("retry_agents") else "build_context"
+    return "agents" if state.get("retry_agents") else "build_context"

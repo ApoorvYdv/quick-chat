@@ -12,6 +12,7 @@ from quick_chat_api.core.rag.graph import NODE_ORDER, build_graph
 from quick_chat_api.core.rag.state import EvidenceItem
 from quick_chat_api.main import app
 from quick_chat_api.utils import dependencies as deps
+from tests.core.rag.offline import OFFLINE_NODES
 
 
 @pytest.fixture
@@ -23,6 +24,9 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
         yield saver
 
     monkeypatch.setattr(pipeline, "agency_checkpointer", fake_checkpointer)
+    monkeypatch.setattr(
+        pipeline, "build_graph", lambda cp: build_graph(cp, nodes=OFFLINE_NODES)
+    )
     monkeypatch.setattr(deps, "validate_active_agency", AsyncMock(return_value=None))
     return TestClient(app)
 
@@ -74,7 +78,9 @@ async def test_clarification_short_circuits_without_llm() -> None:
     async def ask_clarification(state):
         return {"needs_clarification": "Which case?"}
 
-    graph = build_graph(nodes={"resolve_case": ask_clarification, "generate": called})
+    graph = build_graph(
+        nodes={**OFFLINE_NODES, "agents": ask_clarification, "generate": called}
+    )
     state = await graph.ainvoke({"question": "q", "agency": "a"})
 
     assert state["needs_clarification"] == "Which case?"
@@ -84,15 +90,15 @@ async def test_clarification_short_circuits_without_llm() -> None:
 async def test_real_node_replaces_fake_without_signature_change() -> None:
     item = EvidenceItem("a", uuid4(), "t", "1", uuid4(), "text")
 
-    async def retrieve(state):
+    async def agents(state):
         return {"evidence": [item]}
 
     async def generate(state):
         return {"answer": "from evidence", "insufficient_information": False}
 
-    graph = build_graph(nodes={"retrieve": retrieve, "generate": generate})
+    graph = build_graph(nodes={**OFFLINE_NODES, "agents": agents, "generate": generate})
     state = await graph.ainvoke({"question": "q", "agency": "a"})
 
     assert state["answer"] == "from evidence"
     assert state["contexts"][0].endswith("\ntext")
-    assert set(NODE_ORDER) >= {"retrieve", "generate"}
+    assert set(NODE_ORDER) >= {"agents", "generate"}

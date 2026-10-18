@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from quick_chat_api.core.rag.checkpointer import agency_checkpointer
 from quick_chat_api.core.rag.graph import build_graph
 from quick_chat_api.core.rag.state import PipelineState, initial_state
+from quick_chat_api.core.rag.tracing import request_run
 from quick_chat_api.core.schemas.chat import AskRequest, AskResponse
 
 
@@ -51,7 +52,10 @@ async def run_pipeline(
 ) -> PipelineResult:
     # ponytail: graph compiled per request because the checkpointer is bound to
     # a per-request connection; cache a compiled graph if profiling shows cost.
-    async with agency_checkpointer(engine, agency) as checkpointer:
+    async with (
+        request_run(agency, request.session_id, trace_id),
+        agency_checkpointer(engine, agency) as checkpointer,
+    ):
         state = await build_graph(checkpointer).ainvoke(
             initial_state(request, agency, case_id), _config(agency, request)
         )
@@ -67,7 +71,10 @@ async def stream_pipeline(
 ) -> AsyncIterator[tuple[str, dict[str, Any]]]:
     """Yields ("status", {node}) per finished node, then ("final", response)."""
     state = initial_state(request, agency, case_id)
-    async with agency_checkpointer(engine, agency) as checkpointer:
+    async with (
+        request_run(agency, request.session_id, trace_id),
+        agency_checkpointer(engine, agency) as checkpointer,
+    ):
         async for update in build_graph(checkpointer).astream(
             state, _config(agency, request), stream_mode="updates"
         ):

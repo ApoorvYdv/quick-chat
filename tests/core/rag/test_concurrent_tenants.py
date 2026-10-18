@@ -8,6 +8,7 @@ from quick_chat_api.core.rag.graph import build_graph
 from quick_chat_api.core.rag.state import initial_state
 from quick_chat_api.core.schemas.chat import AskRequest
 from quick_chat_api.utils.context import RequestContext
+from tests.core.rag.offline import OFFLINE_NODES
 
 
 async def _echo_agency(state):
@@ -22,7 +23,7 @@ async def _ask(saver: InMemorySaver, agency: str) -> tuple[str, str]:
     config = {"configurable": {"thread_id": f"{agency}:{request.session_id}"}}
     with request_cycle_context({}):
         RequestContext.agency = agency
-        graph = build_graph(saver, nodes={"understand": _echo_agency})
+        graph = build_graph(saver, nodes={**OFFLINE_NODES, "understand": _echo_agency})
         state = await graph.ainvoke(initial_state(request, agency, None), config)
     return state["agency"], state["answer"]
 

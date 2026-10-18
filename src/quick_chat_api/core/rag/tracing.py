@@ -6,19 +6,23 @@ Sinks only ever receive ids, counts, status and latency; never case content.
 from __future__ import annotations
 
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from functools import lru_cache, wraps
-from typing import Any
+from typing import Any, Literal, TypeVar
+from uuid import UUID
 
-from langsmith import Client, RunTree
+from langsmith import Client, trace, traceable, tracing_context
+from langsmith.run_helpers import get_current_run_tree
 
 from quick_chat_api.core.rag.state import PipelineState
 from quick_chat_api.settings.config import settings
 from quick_chat_api.utils.common.logger import logger
 
 Node = Callable[[PipelineState], Awaitable[dict[str, Any]]]
+F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
 
 
 @dataclass(frozen=True)
@@ -48,39 +52,109 @@ def _log_sink(event: NodeEvent) -> None:
 
 
 @lru_cache
-def _langsmith_client() -> Client:
+def langsmith_client() -> Client:
+    """Client that blanks every run's inputs/outputs, whoever created the run.
+
+    Also covers LangChain/LangGraph's own auto-created runs; counts and ids
+    travel only as run metadata.
+    """
     key = settings.LANGSMITH_API_KEY
-    return Client(api_key=key.get_secret_value() if key else None)
+    return Client(
+        api_key=key.get_secret_value() if key else None,
+        hide_inputs=_blank,
+        hide_outputs=_blank,
+    )
 
 
-def _langsmith_sink(event: NodeEvent) -> None:
-    """Redacted: inputs/outputs are scrubbed to ids and counts."""
-    run = RunTree(
-        name=event.node,
-        run_type="chain",
+def _blank(_: Any) -> dict[str, Any]:
+    return {}
+
+
+def annotate(**metadata: Any) -> None:
+    """Attach ids/counts/scores to the current LangSmith run (no-op when off)."""
+    if run := get_current_run_tree():
+        run.add_metadata(metadata)
+
+
+def _run_sink(event: NodeEvent) -> None:
+    annotate(
+        agency=event.agency,
+        session_id=event.session_id,
+        status=event.status,
+        latency_ms=event.latency_ms,
+        evidence_count=event.evidence_count,
+    )
+
+
+@asynccontextmanager
+async def request_run(
+    agency: str, session_id: UUID, trace_id: str
+) -> AsyncIterator[None]:
+    """Parent run every step nests under; a no-op unless LANGSMITH_ENABLED."""
+    client = langsmith_client()
+    with tracing_context(
+        enabled=settings.LANGSMITH_ENABLED,
+        client=client,
         project_name=settings.LANGSMITH_PROJECT,
-        ls_client=_langsmith_client(),
-        inputs={},
-        start_time=event.started_at,
-        extra={"metadata": {"agency": event.agency, "session_id": event.session_id}},
-    )
-    run.end(
-        outputs={
-            "status": event.status,
-            "latency_ms": event.latency_ms,
-            "evidence_count": event.evidence_count,
-        },
-        error=None if event.status == "ok" else "node failed",
-    )
-    run.post()
+    ):
+        async with trace(
+            name="request",
+            run_type="chain",
+            inputs={},
+            metadata={
+                "agency": agency,
+                "session_id": str(session_id),
+                "trace_id": trace_id,
+            },
+            client=client,
+            project_name=settings.LANGSMITH_PROJECT,
+        ):
+            yield
+
+
+def span(
+    name: str, run_type: Literal["tool", "chain", "retriever"] = "tool"
+) -> Callable[[F], F]:
+    """Child run + structlog event for a step inside a node (tool, retrieval, rerank)."""
+
+    def decorator(fn: F) -> F:
+        @traceable(
+            name=name,
+            run_type=run_type,
+            process_inputs=_blank,
+            process_outputs=_blank,
+        )
+        @wraps(fn)
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
+            start = time.perf_counter()
+            status = "ok"
+            try:
+                return await fn(*args, **kwargs)
+            except Exception:
+                status = "error"
+                raise
+            finally:
+                latency = round((time.perf_counter() - start) * 1000, 1)
+                annotate(status=status, latency_ms=latency)
+                logger.info(
+                    "rag span",
+                    extra={"span": name, "status": status, "latency_ms": latency},
+                )
+
+        return wrapper  # type: ignore[return-value]
+
+    return decorator
 
 
 def _sinks() -> list[Sink]:
-    return [_log_sink, *([_langsmith_sink] if settings.LANGSMITH_ENABLED else [])]
+    return [_log_sink, _run_sink]
 
 
 def traced_node(name: str) -> Callable[[Node], Node]:
     def decorator(fn: Node) -> Node:
+        @traceable(
+            name=name, run_type="chain", process_inputs=_blank, process_outputs=_blank
+        )
         @wraps(fn)
         async def wrapper(state: PipelineState) -> dict[str, Any]:
             started_at = datetime.now(UTC)

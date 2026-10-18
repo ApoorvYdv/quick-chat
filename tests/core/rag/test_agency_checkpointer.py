@@ -10,6 +10,7 @@ from quick_chat_api.core.rag import checkpointer as cp
 from quick_chat_api.core.rag.graph import build_graph
 from quick_chat_api.core.rag.state import initial_state
 from quick_chat_api.core.schemas.chat import AskRequest
+from tests.core.rag.offline import OFFLINE_NODES
 
 pytestmark = pytest.mark.integration
 
@@ -32,11 +33,17 @@ async def test_checkpoints_are_isolated_per_agency_schema(postgres, db_env) -> N
     config = {"configurable": {"thread_id": f"x:{SESSION}"}}
 
     async with cp.agency_checkpointer(engine, "ckpt_a") as saver:
-        await build_graph(saver).ainvoke(_turn("only in a"), config)
+        await build_graph(saver, nodes=OFFLINE_NODES).ainvoke(
+            _turn("only in a"), config
+        )
     async with cp.agency_checkpointer(engine, "ckpt_a") as saver:
-        again = await build_graph(saver).ainvoke(_turn("second"), config)
+        again = await build_graph(saver, nodes=OFFLINE_NODES).ainvoke(
+            _turn("second"), config
+        )
     async with cp.agency_checkpointer(engine, "ckpt_b") as saver:
-        other = await build_graph(saver).ainvoke(_turn("in b"), config)
+        other = await build_graph(saver, nodes=OFFLINE_NODES).ainvoke(
+            _turn("in b"), config
+        )
 
     assert [m.content for m in again["messages"]][::2] == ["only in a", "second"]
     assert [m.content for m in other["messages"]][::2] == ["in b"]

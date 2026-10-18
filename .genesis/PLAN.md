@@ -74,15 +74,15 @@
 
 ### T09-graph-api-tracing — Graph rewired (rewrite -> route -> agents -> supervisor -> context -> generate -> finalize) behind unchanged /ask and /cases/{id}/ask JSON+SSE contracts; nested redacted LangSmith runs and structlog per step; cross-tenant and concurrency tests
 
-- state/risk: active / high
+- state/risk: done / high
 - requirements: FR-13, FR-14, AC-6, AC-9, NFR-1, NFR-4
 - scope: src/quick_chat_api/core/rag, src/quick_chat_api/core/controllers/chat_controller.py, src/quick_chat_api/core/schemas/chat.py, src/quick_chat_api/routers/chat_router.py, src/quick_chat_api/core/constants/error_response.py, tests/core/rag, tests/routers
-- gates: tests: uv run pytest tests/core/rag tests/routers -q, integration: uv run pytest -m integration tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/rag tests/routers -q, integration: uv run pytest -m integration tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T10-evals — Golden datasets (southern_ute + synthetic second agency, dev/holdout split) and one eval command scoring rewrite, router, each structured tool, hybrid retrieval, reranker, supervisor, each agent and the end-to-end pipeline, with gate thresholds and optional LangSmith experiments
 
-- state/risk: queued / medium
+- state/risk: active / medium
 - requirements: FR-15, NFR-5, NFR-7, AC-10, AC-11
 - scope: evals, tests/evals, README.md
 - gates: tests: uv run pytest tests/evals -q, lint: uv run ruff check src tests evals && uv run mypy src, components: uv run python -m evals.run --suite components --gate, independent-review: pending

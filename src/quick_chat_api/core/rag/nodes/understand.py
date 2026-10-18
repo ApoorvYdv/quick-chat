@@ -139,6 +139,10 @@ def make_understand(llm: Runnable[Any, Understanding] | None = None) -> Node:
             state.get("messages", []), settings.CHAT_HISTORY_MAX_TURNS
         )
         entities = extract_entities(question)
+        if requested := state.get("case_number"):
+            entities.case_numbers = list(
+                dict.fromkeys([requested, *entities.case_numbers])
+            )
         agents = route_by_rules(question)
         source: RouteSource = "rule"
         parsed: Understanding | None = None
