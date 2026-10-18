@@ -1,0 +1,13 @@
+{
+  "task": "T08-supervisor-context-generate",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "d3734a29-19cb-4c4f-accc-b1bb2d956057",
+  "human": "apoorv",
+  "reason": "Reviewed T08 diff: supervisor retry loop, context builder, generate node, graph wiring",
+  "observed_at": "2026-10-18T20:13:19.753Z",
+  "source_hash": "3afd1f95194792722a111cc03adf045705ba3f971920d1c71ccb5e59c7473823",
+  "config_hash": "ec954089fa6de97195e1d75cdba516d5eeb25aa79198ffcb9705ed8c7827149a",
+  "reviewed_proofs": "dc7472b857140e6d5227f7f77eaa9a6c633683ec343beb74d9431150ba83a9b1",
+  "hash": "716f5a27b99725b2c91bda08a6b289fa0a4eb6d3152ee89ac97718e058c7725e"
+}

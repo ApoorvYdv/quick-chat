@@ -42,9 +42,13 @@ async def test_per_turn_fields_do_not_leak_between_turns() -> None:
     assert state["needs_clarification"] is None
 
 
+async def _answer(state):
+    return {"answer": "ok"}
+
+
 async def test_evidence_is_not_checkpointed() -> None:
     saver = InMemorySaver()
-    graph = build_graph(saver, nodes={"retrieve": _evidence})
+    graph = build_graph(saver, nodes={"retrieve": _evidence, "generate": _answer})
     await graph.ainvoke(initial_state(_request("q"), "a", None), CONFIG)
 
     stored = saver.get_tuple(CONFIG).checkpoint["channel_values"]

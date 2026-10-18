@@ -4,7 +4,7 @@
 
 - workflow: new-product
 - phase: build
-- plan approval: Apoorv at 2026-10-18T19:48:12.775Z
+- plan approval: apoorv at 2026-10-18T20:12:46.170Z
 
 ## Tasks
 
@@ -66,15 +66,15 @@
 
 ### T08-supervisor-context-generate — Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty
 
-- state/risk: active / high
+- state/risk: done / high
 - requirements: FR-10, FR-11, FR-12, AC-4, AC-7, AC-8, NFR-2, NFR-3, NFR-6
-- scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/modules/rag/context_builder.py, src/quick_chat_api/core/llm/prompts, tests/core/rag, tests/modules/rag
-- gates: tests: uv run pytest tests/core/rag tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/modules/rag/context_builder.py, src/quick_chat_api/core/llm/prompts, tests/core/rag, tests/modules/rag, src/quick_chat_api/core/rag/state.py, src/quick_chat_api/core/rag/graph.py, src/quick_chat_api/core/rag/agents/fanout.py, src/quick_chat_api/core/rag/agents/runner.py, src/quick_chat_api/settings/config.py, tests/routers/test_chat_router.py
+- gates: tests: uv run pytest tests/core/rag tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T09-graph-api-tracing — Graph rewired (rewrite -> route -> agents -> supervisor -> context -> generate -> finalize) behind unchanged /ask and /cases/{id}/ask JSON+SSE contracts; nested redacted LangSmith runs and structlog per step; cross-tenant and concurrency tests
 
-- state/risk: queued / high
+- state/risk: active / high
 - requirements: FR-13, FR-14, AC-6, AC-9, NFR-1, NFR-4
 - scope: src/quick_chat_api/core/rag, src/quick_chat_api/core/controllers/chat_controller.py, src/quick_chat_api/core/schemas/chat.py, src/quick_chat_api/routers/chat_router.py, src/quick_chat_api/core/constants/error_response.py, tests/core/rag, tests/routers
 - gates: tests: uv run pytest tests/core/rag tests/routers -q, integration: uv run pytest -m integration tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending

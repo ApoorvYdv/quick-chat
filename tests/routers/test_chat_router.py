@@ -94,5 +94,5 @@ async def test_real_node_replaces_fake_without_signature_change() -> None:
     state = await graph.ainvoke({"question": "q", "agency": "a"})
 
     assert state["answer"] == "from evidence"
-    assert state["contexts"] == ["text"]
+    assert state["contexts"][0].endswith("\ntext")
     assert set(NODE_ORDER) >= {"retrieve", "generate"}

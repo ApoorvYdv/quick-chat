@@ -13,12 +13,15 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from quick_chat_api.core.rag.nodes import (
+    INSUFFICIENT_ANSWER,
+    after_supervisor,
+    make_build_context,
+    make_generate,
+    make_supervisor,
+)
 from quick_chat_api.core.rag.state import PipelineState
 from quick_chat_api.core.rag.tracing import Node, traced_node
-
-INSUFFICIENT_ANSWER = (
-    "The available case data does not provide enough information to answer."
-)
 
 
 async def understand(state: PipelineState) -> dict[str, Any]:
@@ -34,20 +37,15 @@ async def retrieve(state: PipelineState) -> dict[str, Any]:
     return {"evidence": []}
 
 
-async def build_context(state: PipelineState) -> dict[str, Any]:
-    return {"contexts": [e.text for e in state.get("evidence", [])]}
-
-
-async def generate(state: PipelineState) -> dict[str, Any]:
-    return {"answer": INSUFFICIENT_ANSWER, "insufficient_information": True}
-
-
 async def finalize(state: PipelineState) -> dict[str, Any]:
-    answer = state.get("answer") or INSUFFICIENT_ANSWER
+    clarification = state.get("needs_clarification")
+    answer = state.get("answer") or clarification or INSUFFICIENT_ANSWER
     return {
         "answer": answer,
-        "insufficient_information": state.get("insufficient_information")
-        or not state.get("answer"),
+        "insufficient_information": bool(
+            state.get("insufficient_information")
+            or not (state.get("answer") or clarification)
+        ),
         "messages": [
             HumanMessage(state.get("question", "")),
             AIMessage(answer),
@@ -60,8 +58,9 @@ DEFAULT_NODES: dict[str, Node] = {
     "understand": understand,
     "resolve_case": resolve_case,
     "retrieve": retrieve,
-    "build_context": build_context,
-    "generate": generate,
+    "supervisor": make_supervisor(),
+    "build_context": make_build_context(),
+    "generate": make_generate(),
     "finalize": finalize,
 }
 
@@ -70,6 +69,10 @@ NODE_ORDER = tuple(DEFAULT_NODES)
 
 def _after_resolve(state: PipelineState) -> str:
     return "finalize" if state.get("needs_clarification") else "retrieve"
+
+
+def _after_retrieve(state: PipelineState) -> str:
+    return "finalize" if state.get("needs_clarification") else "supervisor"
 
 
 def _after_context(state: PipelineState) -> str:
@@ -88,7 +91,8 @@ def build_graph(
     graph.add_edge(START, "understand")
     graph.add_edge("understand", "resolve_case")
     graph.add_conditional_edges("resolve_case", _after_resolve)
-    graph.add_edge("retrieve", "build_context")
+    graph.add_conditional_edges("retrieve", _after_retrieve)
+    graph.add_conditional_edges("supervisor", after_supervisor)
     graph.add_conditional_edges("build_context", _after_context)
     graph.add_edge("generate", "finalize")
     graph.add_edge("finalize", END)

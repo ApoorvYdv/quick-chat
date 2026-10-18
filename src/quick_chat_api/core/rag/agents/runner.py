@@ -172,6 +172,7 @@ async def search_reranked(
                 c.content,
                 c.score,
                 r.score,
+                c.source_type,
             )
         )
         lines.append(f"[{c.source_type} case={c.case_record_id}] {c.content}")

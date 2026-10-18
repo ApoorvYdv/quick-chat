@@ -45,12 +45,14 @@ def _clarification(out: CaseAgentOutput) -> str:
 
 def make_agents() -> Node:
     async def agents(state: PipelineState) -> dict[str, Any]:
-        names = [a for a in state.get("agents", []) if a in RUNNERS]
+        retry = state.get("retry_agents", [])
+        names = [a for a in (retry or state.get("agents", [])) if a in RUNNERS]
+        prior = dict(state.get("agent_outputs", {})) if retry else {}
         entities = state.get("entities", {})
         anchored = bool(entities.get("case_numbers") or entities.get("parties"))
         known = [state.get("requested_case_id"), *state.get("resolved_case_ids", [])]
         scope = CaseScope.of(i for i in known if i)
-        outputs: dict[str, AgentOutput] = {}
+        outputs: dict[str, AgentOutput] = prior
 
         rest = names
         if "case" in names and len(names) > 1:

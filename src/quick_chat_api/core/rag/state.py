@@ -29,6 +29,7 @@ class EvidenceItem:
     text: str
     score: float = 0.0
     rerank_score: float | None = None
+    source_type: str = ""
 
 
 class PipelineState(TypedDict, total=False):
@@ -47,6 +48,11 @@ class PipelineState(TypedDict, total=False):
     evidence: Annotated[list[EvidenceItem], UntrackedValue]
     contexts: Annotated[list[str], UntrackedValue]
     agent_outputs: Annotated[dict[str, Any], UntrackedValue]
+    context_map: Annotated[dict[str, EvidenceItem], UntrackedValue]
+    context_notes: Annotated[list[str], UntrackedValue]
+    retries: dict[str, int]
+    retry_agents: list[str]
+    insufficient_domains: list[str]
     answer: str
     citations: list[Citation]
     conflicts: list[str]
@@ -74,6 +80,11 @@ def initial_state(
         "evidence": [],
         "contexts": [],
         "agent_outputs": {},
+        "context_map": {},
+        "context_notes": [],
+        "retries": {},
+        "retry_agents": [],
+        "insufficient_domains": [],
         "answer": "",
         "citations": [],
         "conflicts": [],

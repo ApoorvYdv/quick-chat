@@ -213,6 +213,18 @@ class Settings(BaseSettings):
         gt=0,
     )
 
+    SUPERVISOR_MAX_RETRIES: int = Field(
+        default=2,
+        description="Rewritten retries per agent after an irrelevant result",
+        ge=0,
+        le=2,
+    )
+    SUPERVISOR_ACCEPT_SCORE: float = Field(
+        default=2.0,
+        description="Rerank logit at or above which a chunk is relevant without "
+        "an LLM grade; lower-scoring chunks are graded by the LLM",
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

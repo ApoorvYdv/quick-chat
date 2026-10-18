@@ -1,0 +1,30 @@
+{
+  "task": "T08-supervisor-context-generate",
+  "gate": "lint",
+  "kind": "command",
+  "attempt": "a3688d95-66c6-44e0-9ac5-67071cfac67f",
+  "command": "uv run ruff check src tests evals && uv run mypy src",
+  "started_at": "2026-10-18T20:06:37.941Z",
+  "observed_at": "2026-10-18T20:06:41.609Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "All checks passed!\nSuccess: no issues found in 119 source files\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "fea07fbf904fdb3fca6e615b0542a10c46a97c32",
+    "dirty": true
+  },
+  "source_hash": "3afd1f95194792722a111cc03adf045705ba3f971920d1c71ccb5e59c7473823",
+  "before_hash": "3afd1f95194792722a111cc03adf045705ba3f971920d1c71ccb5e59c7473823",
+  "config_hash": "1f4066c6156b622efc7489a52d66476005d761a4746bcaee9fe7deb7200bd735",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "afae02c021dd0c34ed5e2063008a67763b1c4f05d87c5b62269f4d8a297ac0bb"
+}
