@@ -9,7 +9,7 @@ case content is not stored at rest) and every other per-turn field is reset by
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 from uuid import UUID
 
 from langchain_core.messages import AnyMessage
@@ -46,6 +46,7 @@ class PipelineState(TypedDict, total=False):
     route_source: str
     evidence: Annotated[list[EvidenceItem], UntrackedValue]
     contexts: Annotated[list[str], UntrackedValue]
+    agent_outputs: Annotated[dict[str, Any], UntrackedValue]
     answer: str
     citations: list[Citation]
     conflicts: list[str]
@@ -72,6 +73,7 @@ def initial_state(
         "route_source": "",
         "evidence": [],
         "contexts": [],
+        "agent_outputs": {},
         "answer": "",
         "citations": [],
         "conflicts": [],

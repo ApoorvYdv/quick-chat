@@ -207,6 +207,11 @@ class Settings(BaseSettings):
     CHAT_HISTORY_MAX_TURNS: int = Field(
         default=6, description="Conversation turns kept in the prompt", ge=0
     )
+    AGENT_MAX_ITERATIONS: int = Field(
+        default=4,
+        description="Max model calls in one agent's tool-calling loop",
+        gt=0,
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

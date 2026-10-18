@@ -61,7 +61,7 @@
 - state/risk: active / high
 - requirements: FR-3, FR-5, FR-6, FR-7, AC-3, NFR-1
 - scope: src/quick_chat_api/core/rag/agents, tests/core/rag/agents
-- gates: tests: uv run pytest tests/core/rag/agents -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/rag/agents -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T08-supervisor-context-generate — Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty

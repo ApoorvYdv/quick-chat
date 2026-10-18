@@ -8,7 +8,7 @@
 - blocker: none
 - next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pending, lint:pending, independent-review:pending
+- gates: tests:pass, lint:pass, independent-review:pass
 - recent failures: none
 
 ## Resume
@@ -17,9 +17,9 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: 4ad2d91d49ed391fc068ec028bdd28a1c768eaf78865eec87be71bcf79c73f59. Use --since only after receiving that full packet; kickoff is not the packet.
+Context fingerprint: 92ec8cb06c98b23963069dacfb2eec500000bd389f11d42e592f66cef57934cd. Use --since only after receiving that full packet; kickoff is not the packet.
+- DECISION-3310fd98: T07 agents: LLM tool-calling loop, typed outputs, no graph wiring
 - DECISION-75684a9f: Agentic multi-agent flow replaces single-case scoping
-- KNOWLEDGE-ca1cffb6: Domain map conflict for disposition/sanction
-- DECISION-1e65e89a: Supervisor retries: 2 per agent
+- DECISION-db99641c: Cross-case list cap 20
 Applicable invariants, active rules, authorization and proof references are in the packet. Truncated summaries are retrieval pointers, not the full evidence.
 Reuse fresh gates with --reuse. Reconcile interrupted attempts before replaying commands. Report state → evidence → blocker → next action; checkpoint before stopping.

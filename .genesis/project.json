@@ -9,7 +9,7 @@
     "non_goals": [],
     "trust_boundary": "local repository",
     "created_at": "2026-10-17T16:09:33.474Z",
-    "updated_at": "2026-10-18T19:07:01.945Z"
+    "updated_at": "2026-10-18T19:41:34.826Z"
   },
   "policy": {
     "ponytail": "full",
@@ -263,6 +263,16 @@
       "status": "accepted",
       "source": "owner answer 2026-10-17",
       "recorded_at": "2026-10-17T16:14:07.261Z",
+      "paths": [],
+      "tags": []
+    },
+    {
+      "id": "DECISION-3310fd98",
+      "title": "T07 agents: LLM tool-calling loop, typed outputs, no graph wiring",
+      "text": "Owner 2026-10-19: each agent is a bounded LLM tool-calling loop (AGENT_MAX_ITERATIONS) over Pydantic-validated tools; returns a typed Pydantic output plus EvidenceItems in state; graph.py wiring left to the supervisor task. Case agent party ambiguity or no match short-circuits dependents with needs_clarification (candidates, no ssn). Disposition/sanction move to Procedural: SOURCE_TYPE_DOMAIN in core/constants/constants.py is updated (scope widened beyond core/rag/agents).",
+      "status": "accepted",
+      "source": "user answers 2026-10-19",
+      "recorded_at": "2026-10-18T19:15:33.946Z",
       "paths": [],
       "tags": []
     }
@@ -1975,24 +1985,42 @@
           "kind": "command",
           "command": "uv run pytest tests/core/rag/agents -q",
           "mandatory": true,
-          "status": "pending",
-          "evidence": null
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T07-agents-tests-506561b7-58f1-4d26-a787-3efd666b8387.json",
+            "hash": "f126dcf47a15898a341eafbe999b7afe5179f1b95c0c84b09f138c8e99f503e5",
+            "source_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+            "config_hash": "b9f5d48d1414db356ed64efcb9735159d90de5740b451fa33ff1b519704c55a1",
+            "observed_at": "2026-10-18T19:39:48.838Z"
+          }
         },
         {
           "id": "lint",
           "kind": "command",
           "command": "uv run ruff check src tests evals && uv run mypy src",
           "mandatory": true,
-          "status": "pending",
-          "evidence": null
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T07-agents-lint-bd838d82-13b3-443a-aefa-dec1f9fdc36b.json",
+            "hash": "18037fa01e920bbeb5191684279b0ec0a002958cf3b8fa744170d74cfa996607",
+            "source_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+            "config_hash": "b9f5d48d1414db356ed64efcb9735159d90de5740b451fa33ff1b519704c55a1",
+            "observed_at": "2026-10-18T19:39:53.100Z"
+          }
         },
         {
           "id": "independent-review",
           "kind": "review",
           "command": "",
           "mandatory": true,
-          "status": "pending",
-          "evidence": null
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T07-agents-independent-review-f7c4e7cd-cfa1-4351-bc28-e832822aadb9.json",
+            "hash": "7c9274a5363c8b3c965897b576eda88950bd35a56e3f823b17ed0cdd5d0af538",
+            "source_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+            "config_hash": "b9f5d48d1414db356ed64efcb9735159d90de5740b451fa33ff1b519704c55a1",
+            "observed_at": "2026-10-18T19:41:34.732Z"
+          }
         }
       ],
       "next_action": "Run the task pre-flight.",
@@ -2712,6 +2740,15 @@
       "task": "T06-understand-route",
       "human": "Apoorv",
       "reason": "Re-approve T06 after scope widening to state.py; code unchanged",
+      "revision": null
+    },
+    {
+      "id": "f7c4e7cd-cfa1-4351-bc28-e832822aadb9",
+      "at": "2026-10-18T19:41:34.732Z",
+      "action": "approve",
+      "task": "T07-agents",
+      "human": "Apoorv",
+      "reason": "reviewed diff and proof",
       "revision": null
     }
   ],
@@ -3555,6 +3592,54 @@
       "cost": null,
       "stop_reason": null,
       "ended_at": "2026-10-18T19:06:32.603Z"
+    },
+    {
+      "id": "506561b7-58f1-4d26-a787-3efd666b8387",
+      "task": "T07-agents",
+      "kind": "gate",
+      "command": "uv run pytest tests/core/rag/agents -q",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 53551,
+      "child_pid": 53829,
+      "started_at": "2026-10-18T19:39:39.841Z",
+      "status": "passed",
+      "before_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+      "config_hash": "b9f5d48d1414db356ed64efcb9735159d90de5740b451fa33ff1b519704c55a1",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-18T19:39:48.838Z"
+    },
+    {
+      "id": "bd838d82-13b3-443a-aefa-dec1f9fdc36b",
+      "task": "T07-agents",
+      "kind": "gate",
+      "command": "uv run ruff check src tests evals && uv run mypy src",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 53551,
+      "child_pid": 54829,
+      "started_at": "2026-10-18T19:39:49.456Z",
+      "status": "passed",
+      "before_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+      "config_hash": "b9f5d48d1414db356ed64efcb9735159d90de5740b451fa33ff1b519704c55a1",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-18T19:39:53.100Z"
     }
   ],
   "authorizations": [],
@@ -3697,11 +3782,11 @@
     }
   },
   "checkpoint": {
-    "at": "2026-10-18T19:07:01.899Z",
+    "at": "2026-10-18T19:39:53.832Z",
     "revision": {
-      "commit": "e88fcb6c039d2179686952c609a2482c4ee1259c",
+      "commit": "8512f45c52ce33c578e4e0379b5f0c5fdbad29d8",
       "dirty": true,
-      "source_hash": "49f8313b2da72e8dab1fe336769210cf2499ebfaff3f90764717a9096d2a781f"
+      "source_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166"
     },
     "active_task": "T07-agents",
     "next_action": "Run the task pre-flight."

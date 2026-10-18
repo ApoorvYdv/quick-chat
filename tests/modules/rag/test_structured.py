@@ -52,7 +52,7 @@ def test_next_appearance_filters_from_today_in_sql() -> None:
 def test_domain_map_matches_plan() -> None:
     T = AIKnowledgeSourceType
     assert SOURCE_TYPE_DOMAIN[T.APPEARANCE] is Domain.HEARINGS
-    assert SOURCE_TYPE_DOMAIN[T.DISPOSITION] is Domain.FINANCIAL
+    assert SOURCE_TYPE_DOMAIN[T.DISPOSITION] is Domain.HEARINGS
     assert SOURCE_TYPE_DOMAIN[T.CHARGE] is Domain.CASE
 
 

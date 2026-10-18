@@ -224,8 +224,8 @@ SOURCE_TYPE_DOMAIN: dict[AIKnowledgeSourceType, Domain] = {
     _T.ADDRESS: Domain.CASE,
     _T.APPEARANCE: Domain.HEARINGS,
     _T.PAYMENT: Domain.FINANCIAL,
-    _T.DISPOSITION: Domain.FINANCIAL,
-    _T.SANCTION: Domain.FINANCIAL,
+    _T.DISPOSITION: Domain.HEARINGS,
+    _T.SANCTION: Domain.HEARINGS,
 }
 
 

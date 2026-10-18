@@ -1,0 +1,13 @@
+{
+  "task": "T07-agents",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "f7c4e7cd-cfa1-4351-bc28-e832822aadb9",
+  "human": "Apoorv",
+  "reason": "reviewed diff and proof",
+  "observed_at": "2026-10-18T19:41:34.732Z",
+  "source_hash": "41149accceac45184b7cfb4f4772dc6bbeac92f896970baa41a5ca9d7ca44166",
+  "config_hash": "b9f5d48d1414db356ed64efcb9735159d90de5740b451fa33ff1b519704c55a1",
+  "reviewed_proofs": "49846c655e9a2b339b695d8b4bec514234a082a21a153546df90d6e0f49bf0f8",
+  "hash": "7c9274a5363c8b3c965897b576eda88950bd35a56e3f823b17ed0cdd5d0af538"
+}
