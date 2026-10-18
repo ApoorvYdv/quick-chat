@@ -9,7 +9,7 @@
     "non_goals": [],
     "trust_boundary": "local repository",
     "created_at": "2026-10-17T16:09:33.474Z",
-    "updated_at": "2026-10-18T06:39:34.016Z"
+    "updated_at": "2026-10-18T06:50:06.113Z"
   },
   "policy": {
     "ponytail": "full",
@@ -1437,7 +1437,7 @@
       "failures": [],
       "limitations": [],
       "created_at": "2026-10-17T16:22:26.897Z",
-      "updated_at": "2026-10-17T16:22:26.897Z",
+      "updated_at": "2026-10-18T06:47:39.082Z",
       "base_manifest": {
         ".DS_Store": "2f1c0ee58bbf4fbd71be458af05c719fb2fdf557ee933a857d244b26a9bae394",
         ".claude/README.md": "dd9ed511ff485132d7ea3b0d3cb496c1ab88e10784c85a533680e1131fbeecb9",
@@ -2682,11 +2682,11 @@
     }
   },
   "checkpoint": {
-    "at": "2026-10-18T06:39:33.946Z",
+    "at": "2026-10-18T06:50:06.066Z",
     "revision": {
-      "commit": "2c4284ec8dec3ae68e521a9f257439703ea22029",
+      "commit": "c46b64b8426a1c7937573264d4b50f7d96d0517a",
       "dirty": true,
-      "source_hash": "66882a7d89614f3e49b1e183eb1666d9ac618529019e049e26786187993c43f8"
+      "source_hash": "64645397a9bf4540a3d05e49ee8e69c6f9f9ec234c6223086ea87e6788d8ae60"
     },
     "active_task": null,
     "next_action": "Run the task pre-flight."

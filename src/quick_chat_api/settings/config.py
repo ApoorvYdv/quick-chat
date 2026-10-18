@@ -126,6 +126,20 @@ class Settings(BaseSettings):
         default=30.0, description="Timeout for inference service rerank calls", gt=0
     )
 
+    # Structured cross-case retrieval
+    CROSS_CASE_LIST_CAP: int = Field(
+        default=20, description="Max cases returned by a cross-case list", gt=0
+    )
+    PARTY_FUZZY_MIN_SIMILARITY: float = Field(
+        default=0.4,
+        description="pg_trgm similarity floor for fuzzy party-name candidates",
+        ge=0,
+        le=1,
+    )
+    PARTY_CANDIDATE_LIMIT: int = Field(
+        default=5, description="Max distinct people surfaced as candidates", gt=0
+    )
+
     # Chunking
     CHUNKING_STRATEGY: str = Field(
         default="structured",

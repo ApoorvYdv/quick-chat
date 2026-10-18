@@ -6,12 +6,21 @@ from dataclasses import dataclass
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from quick_chat_api.core.models.agency.agency import PaymentRecord
+from quick_chat_api.core.models.agency.agency import CaseRecord, PaymentRecord
 
-__all__ = ["PaymentSummary", "get_payment_summary"]
+__all__ = [
+    "CaseScopeError",
+    "PaymentSummary",
+    "get_payment_summaries",
+    "get_payment_summary",
+]
+
+
+class CaseScopeError(RuntimeError):
+    """A case id is not visible in the current tenant."""
 
 
 @dataclass(frozen=True)
@@ -31,3 +40,17 @@ async def get_payment_summary(session: AsyncSession, case_id: UUID) -> PaymentSu
     payments = list((await session.execute(stmt)).scalars().all())
     total = sum((p.amount for p in payments if not p.void), Decimal("0.00"))
     return PaymentSummary(payments=payments, total_paid=total)
+
+
+async def get_payment_summaries(
+    session: AsyncSession, case_ids: list[UUID]
+) -> dict[UUID, PaymentSummary]:
+    """Payment summaries for resolved cases; any id outside the tenant raises CaseScopeError."""
+    ids = set(case_ids)
+    found = (
+        await session.execute(select(func.count()).where(CaseRecord.id.in_(ids)))
+    ).scalar_one()
+    if found != len(ids):
+        raise CaseScopeError("case id not found in the current tenant")
+    # ponytail: one query per case (list cap is 20); batch into one IN query if it shows in latency
+    return {cid: await get_payment_summary(session, cid) for cid in case_ids}
