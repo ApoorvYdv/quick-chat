@@ -28,6 +28,7 @@ from quick_chat_api.core.vectorstore.base import (
 )
 from quick_chat_api.core.vectorstore.exceptions import VectorStoreOperationError
 from quick_chat_api.core.vectorstore.registry import register_store
+from quick_chat_api.core.vectorstore.sparse import encode_document, encode_query
 from quick_chat_api.settings.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,9 @@ _BOOL_PAYLOAD_FIELDS = ("is_juvenile",)
 
 _SCROLL_PAGE_SIZE = 256
 
+DENSE_VECTOR = "dense"
+SPARSE_VECTOR = "bm25"
+
 _NON_COLLECTION_CHARS = re.compile(r"[^a-z0-9_-]+")
 
 
@@ -64,6 +68,7 @@ class QdrantVectorStore(VectorStore):
         url: str,
         collection_prefix: str,
         vector_size: int,
+        prefetch_limit: int,
         api_key: str | None = None,
     ) -> None:
         # Imported lazily so importing this module never pulls in the
@@ -74,6 +79,7 @@ class QdrantVectorStore(VectorStore):
         self._models = qmodels
         self._collection_prefix = collection_prefix
         self._vector_size = vector_size
+        self._prefetch_limit = prefetch_limit
         self._client = QdrantClient(url=url, api_key=api_key)
         self._ensured_collections: set[str] = set()
 
@@ -92,10 +98,19 @@ class QdrantVectorStore(VectorStore):
             )
             self._client.create_collection(
                 collection_name=collection,
-                vectors_config=qmodels.VectorParams(
-                    size=self._vector_size, distance=qmodels.Distance.COSINE
-                ),
+                vectors_config={
+                    DENSE_VECTOR: qmodels.VectorParams(
+                        size=self._vector_size, distance=qmodels.Distance.COSINE
+                    )
+                },
+                sparse_vectors_config={
+                    SPARSE_VECTOR: qmodels.SparseVectorParams(
+                        modifier=qmodels.Modifier.IDF
+                    )
+                },
             )
+        else:
+            self._require_hybrid_schema(collection)
         # Idempotent, and outside the creation branch so collections that predate
         # a new payload field pick up its index without a rebuild.
         for field_name in _INDEXED_PAYLOAD_FIELDS:
@@ -112,6 +127,31 @@ class QdrantVectorStore(VectorStore):
             )
         self._ensured_collections.add(collection)
 
+    def _require_hybrid_schema(self, collection: str) -> None:
+        params = self._client.get_collection(collection).config.params
+        dense = params.vectors
+        sparse = params.sparse_vectors
+        if not (
+            isinstance(dense, dict)
+            and DENSE_VECTOR in dense
+            and SPARSE_VECTOR in (sparse or {})
+        ):
+            raise VectorStoreOperationError(
+                f"Qdrant collection {collection} predates hybrid search; "
+                "recreate it and re-ingest"
+            )
+
+    def recreate_collection(self, agency: str) -> None:
+        collection = self._collection_name(agency)
+        try:
+            self._client.delete_collection(collection)
+            self._ensured_collections.discard(collection)
+            self._ensure_collection(collection)
+        except VectorStoreOperationError:
+            raise
+        except Exception as exc:
+            raise VectorStoreOperationError(f"Qdrant recreate failed: {exc}") from exc
+
     def _resolve_collection(self, agency: str) -> str:
         collection = self._collection_name(agency)
         self._ensure_collection(collection)
@@ -120,11 +160,13 @@ class QdrantVectorStore(VectorStore):
     def _build_filter(self, filter_: VectorFilter) -> Any:
         qmodels = self._models
         must: list[Any] = []
-        if filter_.case_record_id is not None:
+        if filter_.case_record_ids:
             must.append(
                 qmodels.FieldCondition(
                     key="case_record_id",
-                    match=qmodels.MatchValue(value=str(filter_.case_record_id)),
+                    match=qmodels.MatchAny(
+                        any=[str(id_) for id_ in filter_.case_record_ids]
+                    ),
                 )
             )
         if filter_.source_types:
@@ -151,7 +193,14 @@ class QdrantVectorStore(VectorStore):
                 collection_name=collection,
                 points=[
                     qmodels.PointStruct(
-                        id=str(point.id), vector=point.vector, payload=point.payload
+                        id=str(point.id),
+                        vector={
+                            DENSE_VECTOR: point.vector,
+                            SPARSE_VECTOR: _sparse(
+                                qmodels, encode_document(point.text)
+                            ),
+                        },
+                        payload=point.payload,
                     )
                     for point in points
                 ],
@@ -213,15 +262,33 @@ class QdrantVectorStore(VectorStore):
         self,
         agency: str,
         query_vector: list[float],
+        query_text: str,
         filter_: VectorFilter,
         top_k: int,
     ) -> list[VectorSearchResult]:
         collection = self._resolve_collection(agency)
+        qmodels = self._models
+        query_filter = self._build_filter(filter_)
+        prefetch = [
+            qmodels.Prefetch(
+                query=query_vector,
+                using=DENSE_VECTOR,
+                filter=query_filter,
+                limit=self._prefetch_limit,
+            ),
+            qmodels.Prefetch(
+                query=_sparse(qmodels, encode_query(query_text)),
+                using=SPARSE_VECTOR,
+                filter=query_filter,
+                limit=self._prefetch_limit,
+            ),
+        ]
         try:
             hits = self._client.query_points(
                 collection_name=collection,
-                query=query_vector,
-                query_filter=self._build_filter(filter_),
+                prefetch=prefetch,
+                query=qmodels.FusionQuery(fusion=qmodels.Fusion.RRF),
+                query_filter=query_filter,
                 limit=top_k,
                 with_payload=True,
             ).points
@@ -235,11 +302,17 @@ class QdrantVectorStore(VectorStore):
         ]
 
 
+def _sparse(qmodels: Any, encoded: tuple[list[int], list[float]]) -> Any:
+    indices, values = encoded
+    return qmodels.SparseVector(indices=indices, values=values)
+
+
 @register_store("qdrant")
 def _build_qdrant_store(config: Settings) -> QdrantVectorStore:
     return QdrantVectorStore(
         url=config.QDRANT_URL,
         collection_prefix=config.QDRANT_COLLECTION_PREFIX,
         vector_size=config.EMBEDDING_DIM,
+        prefetch_limit=config.QDRANT_PREFETCH_LIMIT,
         api_key=config.QDRANT_API_KEY,
     )

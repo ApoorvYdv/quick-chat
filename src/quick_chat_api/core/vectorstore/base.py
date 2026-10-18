@@ -27,6 +27,8 @@ class VectorPoint:
     id: UUID
     vector: list[float]
     payload: dict[str, Any]
+    text: str = ""
+    """Source text for the sparse (BM25) vector, stored alongside the dense one."""
 
 
 @dataclass(frozen=True)
@@ -52,7 +54,7 @@ class VectorFilter:
     scoped within a single agency's collection (see `agency` on each method
     below for how the collection itself is selected)."""
 
-    case_record_id: UUID | None = None
+    case_record_ids: list[UUID] | None = None
     source_types: list[str] | None = None
 
 
@@ -81,17 +83,24 @@ class VectorStore(ABC):
         self,
         agency: str,
         query_vector: list[float],
+        query_text: str,
         filter_: VectorFilter,
         top_k: int,
     ) -> list[VectorSearchResult]:
-        """Return the `top_k` nearest points in `agency`'s collection to
-        `query_vector` matching `filter_`.
+        """Hybrid search: return the `top_k` points in `agency`'s collection
+        best matching `query_vector` (dense) and `query_text` (sparse BM25),
+        fused with RRF store-side, matching `filter_`.
 
         Filtering must happen server-side, scoped by `filter_`, never as a
         global unfiltered search followed by a Python-side filter. Tenant
         isolation itself comes from `agency` selecting a dedicated
         collection -- never from a payload condition alone.
         """
+
+    @abstractmethod
+    def recreate_collection(self, agency: str) -> None:
+        """Drop and recreate `agency`'s collection with the current schema
+        (dense + sparse vectors). Destroys its points; re-ingest afterwards."""
 
     @abstractmethod
     def ping(self) -> None:

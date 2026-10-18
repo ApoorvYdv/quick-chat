@@ -1,0 +1,30 @@
+{
+  "task": "T02-hybrid-search",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "d8f0cb57-51cf-490b-ba5d-66a4dfe79efb",
+  "command": "uv run pytest tests/core/vectorstore tests/modules/embedding -q",
+  "started_at": "2026-10-17T16:46:40.657Z",
+  "observed_at": "2026-10-17T16:46:52.622Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n........................................................................ [ 96%]\n...                                                                      [100%]Running teardown with pytest sessionfinish...\n\n=============================== warnings summary ===============================\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\ntests/core/vectorstore/test_qdrant_hybrid_integration.py:7\n  /Users/apoorv/Developer/python-projects/quick-chat/tests/core/vectorstore/test_qdrant_hybrid_integration.py:7: DeprecationWarning: testcontainers.qdrant is deprecated, use testcontainers.community.qdrant instead\n    from testcontainers.qdrant import QdrantContainer\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n75 passed, 8 warnings in 8.49s\n",
+  "stderr": "/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n/Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/deepeval/evaluate/execute/loop.py:815: SyntaxWarning: 'return' in a 'finally' block\n  return\n",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "43568c8896cc0baafa62e2edd20ccb3d08d69c71",
+    "dirty": true
+  },
+  "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+  "before_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+  "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "7c22d79f02cb8398abab682cb931052ae57085e020e484b7a1ad465ea3bb196b"
+}

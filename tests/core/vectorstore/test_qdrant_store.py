@@ -3,20 +3,32 @@ from __future__ import annotations
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+import pytest
+from qdrant_client.http.models import Fusion
+
 from quick_chat_api.core.vectorstore.base import VectorFilter, VectorPoint
+from quick_chat_api.core.vectorstore.exceptions import VectorStoreOperationError
 from quick_chat_api.core.vectorstore.providers.qdrant import QdrantVectorStore
 
 
 def _make_store() -> tuple[QdrantVectorStore, MagicMock]:
     with patch("qdrant_client.QdrantClient") as client_cls:
         client = MagicMock()
+        _hybrid_info(client)
         client_cls.return_value = client
         store = QdrantVectorStore(
             url="http://localhost:6333",
             collection_prefix="test_collection",
             vector_size=8,
+            prefetch_limit=50,
         )
     return store, client
+
+
+def _hybrid_info(client: MagicMock) -> None:
+    params = client.get_collection.return_value.config.params
+    params.vectors = {"dense": object()}
+    params.sparse_vectors = {"bm25": object()}
 
 
 def test_collection_created_lazily_on_first_use_when_missing():
@@ -103,7 +115,11 @@ def test_search_scopes_to_the_agencys_collection():
     client.query_points.return_value = MagicMock(points=[hit])
 
     results = store.search(
-        "acme", query_vector=[0.1] * 8, filter_=VectorFilter(), top_k=5
+        "acme",
+        query_vector=[0.1] * 8,
+        query_text="x",
+        filter_=VectorFilter(),
+        top_k=5,
     )
 
     assert len(results) == 1
@@ -122,13 +138,61 @@ def test_search_applies_optional_case_and_source_type_filters():
     store.search(
         "acme",
         query_vector=[0.1] * 8,
-        filter_=VectorFilter(case_record_id=case_id, source_types=["case", "charge"]),
+        query_text="ruling",
+        filter_=VectorFilter(
+            case_record_ids=[case_id], source_types=["case", "charge"]
+        ),
         top_k=10,
     )
 
-    conditions = client.query_points.call_args.kwargs["query_filter"].must
-    keys = {c.key for c in conditions}
-    assert keys == {"case_record_id", "source_type"}
+    kwargs = client.query_points.call_args.kwargs
+    assert kwargs["collection_name"] == "test_collection__acme"
+    assert kwargs["limit"] == 10
+    assert kwargs["query"].fusion == Fusion.RRF
+    flt = kwargs["query_filter"]
+    assert {c.key for c in flt.must} == {"case_record_id", "source_type"}
+    assert flt.must[0].match.any == [str(case_id)]
+    assert {p.using for p in kwargs["prefetch"]} == {"dense", "bm25"}
+    assert all(p.filter == flt and p.limit == 50 for p in kwargs["prefetch"])
+
+
+def test_upsert_writes_dense_and_sparse_vectors():
+    store, client = _make_store()
+    client.collection_exists.return_value = True
+
+    store.upsert_points(
+        "acme",
+        [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={}, text="theft theft")],
+    )
+
+    vector = client.upsert.call_args.kwargs["points"][0].vector
+    assert vector["dense"] == [0.1] * 8
+    assert len(vector["bm25"].indices) == 1
+
+
+def test_legacy_collection_without_hybrid_schema_is_rejected():
+    store, client = _make_store()
+    client.collection_exists.return_value = True
+    params = client.get_collection.return_value.config.params
+    params.vectors = object()
+    params.sparse_vectors = None
+
+    with pytest.raises(VectorStoreOperationError, match="recreate"):
+        store.upsert_points(
+            "acme", [VectorPoint(id=uuid4(), vector=[0.1] * 8, payload={})]
+        )
+
+
+def test_recreate_collection_drops_then_creates_hybrid_collection():
+    store, client = _make_store()
+    client.collection_exists.return_value = False
+
+    store.recreate_collection("acme")
+
+    client.delete_collection.assert_called_once_with("test_collection__acme")
+    kwargs = client.create_collection.call_args.kwargs
+    assert set(kwargs["vectors_config"]) == {"dense"}
+    assert set(kwargs["sparse_vectors_config"]) == {"bm25"}
 
 
 def test_delete_by_filter_scopes_to_the_agencys_collection():
@@ -156,7 +220,7 @@ def test_list_points_pages_through_scroll_until_offset_is_none():
         ([MagicMock(id=str(second), payload=None)], None),
     ]
 
-    points = store.list_points("acme", VectorFilter(case_record_id=uuid4()))
+    points = store.list_points("acme", VectorFilter(case_record_ids=[uuid4()]))
 
     assert [p.id for p in points] == [first, second]
     assert points[1].payload == {}

@@ -10,15 +10,15 @@
 
 ### T01-llm-anthropic — Anthropic chat-model provider registered in core/llm/generation (langchain-anthropic, SDK timeouts/retries, answer and router roles); Ollama stays registered
 
-- state/risk: active / medium
+- state/risk: done / medium
 - requirements: NFR-6, NFR-8
 - scope: src/quick_chat_api/core/llm/generation, src/quick_chat_api/settings/config.py, .env.example, pyproject.toml, uv.lock, tests/core/llm/generation
-- gates: tests: uv run pytest tests/core/llm/generation -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/llm/generation -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Human independent review of the T01 diff, then genesis control approve . T01-llm-anthropic --gate independent-review and genesis task complete.
 
 ### T02-hybrid-search — Qdrant agency collections store dense + sparse BM25 vectors; hybrid query fuses with RRF store-side, returns 10 candidates, filtered by agency collection, case ids and source types; ingestion writes both vectors
 
-- state/risk: queued / high
+- state/risk: active / high
 - requirements: FR-8, FR-16, AC-5
 - scope: src/quick_chat_api/core/vectorstore, src/quick_chat_api/modules/embedding/retrieval.py, src/quick_chat_api/modules/embedding/ingestion_service.py, src/quick_chat_api/settings/config.py, tests/core/vectorstore, tests/modules/embedding
 - gates: tests: uv run pytest tests/core/vectorstore tests/modules/embedding -q, integration: uv run pytest -m integration tests/core/vectorstore -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending

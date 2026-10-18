@@ -62,7 +62,7 @@ def test_case_filter_applies_server_side(fake_embedding, fake_vector_store) -> N
         [_point(mine, "mine", fake_embedding), _point(other, "other", fake_embedding)],
     )
 
-    hits = asyncio.run(retrieve("acme", "mine", case_record_id=mine))
+    hits = asyncio.run(retrieve("acme", "mine", case_record_ids=[mine]))
 
     assert {h.content for h in hits} == {"mine"}
 

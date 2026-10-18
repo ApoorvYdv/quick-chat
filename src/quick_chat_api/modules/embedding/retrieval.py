@@ -3,7 +3,7 @@
 Closes `PLAN.md`'s long-open retrieval gap (A4). Two retrieval paths, per
 `.claude/rules/rag.md`:
 
-- `retrieve()` -- semantic search for narrative/discovery questions. Embeds
+- `retrieve()` -- hybrid search for narrative/discovery questions. Embeds
   the query and searches the tenant's Qdrant collection; chunk text and
   source metadata come back in the point payload (the case tables in
   Postgres remain the source of truth they were projected from).
@@ -34,6 +34,7 @@ from quick_chat_api.core.models.agency.agency import (
 )
 from quick_chat_api.core.vectorstore.base import VectorFilter
 from quick_chat_api.core.vectorstore.factory import get_vector_store
+from quick_chat_api.settings.config import settings
 
 __all__ = ["RetrievedChunk", "get_cases_by_number", "retrieve"]
 
@@ -57,20 +58,25 @@ async def retrieve(
     agency: str,
     query: str,
     *,
-    case_record_id: UUID | None = None,
+    case_record_ids: list[UUID] | None = None,
     source_types: list[str] | None = None,
-    top_k: int = 20,
+    top_k: int | None = None,
 ) -> list[RetrievedChunk]:
-    """Semantic retrieval, ranked by similarity to `query`.
+    """Hybrid (dense + BM25, RRF-fused in Qdrant) retrieval for `query`.
 
     Tenant isolation comes from `agency` selecting the Qdrant collection.
-    `case_record_id`/`source_types` narrow the search server-side (never a
+    `case_record_ids`/`source_types` narrow the search server-side (never a
     global search filtered afterward in Python), per `.claude/rules/rag.md`.
     """
     query_vector = get_embedding_provider().embed_query(query)
-    filter_ = VectorFilter(case_record_id=case_record_id, source_types=source_types)
+    filter_ = VectorFilter(case_record_ids=case_record_ids, source_types=source_types)
     hits = await asyncio.to_thread(
-        get_vector_store().search, agency, query_vector, filter_, top_k
+        get_vector_store().search,
+        agency,
+        query_vector,
+        query,
+        filter_,
+        top_k or settings.RETRIEVAL_TOP_K,
     )
     return [
         RetrievedChunk(

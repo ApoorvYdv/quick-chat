@@ -43,7 +43,9 @@ def test_anthropic_builds_configured_model_per_role(role, model) -> None:
 @pytest.mark.parametrize("key", [None, SecretStr("")])
 def test_anthropic_without_api_key_fails_fast(key) -> None:
     with pytest.raises(ChatModelProviderError, match="ANTHROPIC_API_KEY"):
-        build_provider("anthropic", _anthropic_settings(ANTHROPIC_API_KEY=key), "answer")
+        build_provider(
+            "anthropic", _anthropic_settings(ANTHROPIC_API_KEY=key), "answer"
+        )
 
 
 def test_ollama_still_registered() -> None:

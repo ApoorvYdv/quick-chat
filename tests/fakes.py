@@ -81,10 +81,14 @@ class FakeVectorStore(VectorStore):
             if _matches(p, filter_)
         ]
 
+    def recreate_collection(self, agency: str) -> None:
+        self.collections[agency] = {}
+
     def search(
         self,
         agency: str,
         query_vector: list[float],
+        query_text: str,
         filter_: VectorFilter,
         top_k: int,
     ) -> list[VectorSearchResult]:
@@ -104,9 +108,9 @@ def _dot(a: list[float], b: list[float]) -> float:
 
 def _matches(point: VectorPoint, filter_: VectorFilter) -> bool:
     payload = point.payload
-    if filter_.case_record_id is not None and payload.get("case_record_id") != str(
-        filter_.case_record_id
-    ):
+    if filter_.case_record_ids and payload.get("case_record_id") not in {
+        str(i) for i in filter_.case_record_ids
+    }:
         return False
     return not (
         filter_.source_types and payload.get("source_type") not in filter_.source_types

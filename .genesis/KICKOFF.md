@@ -4,11 +4,11 @@
 
 - objective: Build a production-ready agentic RAG application with high accuracy and answer relevancy: replace the single-case-scoped flow with query rewriting, deterministic-first (LLM fallback) routing to Case, Financial and Procedural agents (structured + hybrid vector search with reranking, top 10 -> top 5), a supervisor that checks context relevance and retries agents up to a limit, grounded answer generation, full logging and LangSmith tracing per agent, and evals for every agent and component; must support cross-case questions such as all cases for a defendant or all REGISTERED cases for a hearing date.
 - phase/status: build/active
-- active task: T01-llm-anthropic — Anthropic chat-model provider registered in core/llm/generation (langchain-anthropic, SDK timeouts/retries, answer and router roles); Ollama stays registered
+- active task: T02-hybrid-search — Qdrant agency collections store dense + sparse BM25 vectors; hybrid query fuses with RRF store-side, returns 10 candidates, filtered by agency collection, case ids and source types; ingestion writes both vectors
 - blocker: none
-- next action: Human independent review of the T01 diff, then genesis control approve . T01-llm-anthropic --gate independent-review and genesis task complete.
+- next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pass, lint:pass, independent-review:pending
+- gates: tests:pass, integration:fail, lint:pending, independent-review:pending
 - recent failures: none
 
 ## Resume
@@ -17,9 +17,7 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: 91b65bf2a31645bb2791e16bc270539b655cd0cd9d82a95657528f42b531c413. Use --since only after receiving that full packet; kickoff is not the packet.
-- DECISION-c1c87ad6: LLM provider: Claude via Anthropic
-- KNOWLEDGE-8e1d6bf0: LLM is local Ollama only today
-- DECISION-fa550f43: Eval release gate
+Context fingerprint: 13a01a0ceedea4cda3bd9ed432a2fe3c0f56aa2ab1f8c2ac25a3cabb8af8792e. Use --since only after receiving that full packet; kickoff is not the packet.
+- DECISION-db99641c: Cross-case list cap 20
 Applicable invariants, active rules, authorization and proof references are in the packet. Truncated summaries are retrieval pointers, not the full evidence.
 Reuse fresh gates with --reuse. Reconcile interrupted attempts before replaying commands. Report state → evidence → blocker → next action; checkpoint before stopping.

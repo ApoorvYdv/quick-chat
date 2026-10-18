@@ -159,7 +159,7 @@ class CaseIngestionService:
         Returns the number of distinct entities (sources) that were indexed.
         """
         store = get_vector_store()
-        filter_ = VectorFilter(case_record_id=case_id)
+        filter_ = VectorFilter(case_record_ids=[case_id])
         try:
             existing = await asyncio.to_thread(store.list_points, self._agency, filter_)
             await asyncio.to_thread(store.delete_by_filter, self._agency, filter_)
@@ -253,7 +253,7 @@ class CaseIngestionService:
         points = await asyncio.to_thread(
             get_vector_store().list_points,
             self._agency,
-            VectorFilter(case_record_id=case_id),
+            VectorFilter(case_record_ids=[case_id]),
         )
         grouped: dict[_SourceKey, list] = {}
         for point in points:
@@ -283,6 +283,7 @@ class CaseIngestionService:
             VectorPoint(
                 id=_point_id(key, chunk.index),
                 vector=vector,
+                text=chunk.content,
                 payload={
                     **entity.case_context,
                     "case_record_id": str(entity.case_record_id),

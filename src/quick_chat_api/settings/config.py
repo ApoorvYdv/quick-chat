@@ -82,6 +82,17 @@ class Settings(BaseSettings):
     QDRANT_API_KEY: str | None = Field(
         default=None, description="Qdrant API key (unset for local/self-hosted)"
     )
+    QDRANT_PREFETCH_LIMIT: int = Field(
+        default=50,
+        description="Candidates each of the dense and sparse legs contributes to "
+        "RRF fusion before the fused list is cut to the requested top_k",
+        gt=0,
+    )
+    RETRIEVAL_TOP_K: int = Field(
+        default=10,
+        description="Hybrid retrieval candidates returned per query (pre-rerank)",
+        gt=0,
+    )
     QDRANT_COLLECTION_PREFIX: str = Field(
         default="case_knowledge_chunks",
         description="Prefix for per-agency Qdrant collections (collection-per-tenant: "

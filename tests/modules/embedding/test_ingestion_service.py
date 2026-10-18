@@ -203,9 +203,9 @@ class TestDeleteCaseIndex:
 
         assert deleted == 2
         remaining = fake_vector_store.list_points(
-            AGENCY, VectorFilter(case_record_id=case_b)
+            AGENCY, VectorFilter(case_record_ids=[case_b])
         )
         assert len(remaining) == 1
         assert not fake_vector_store.list_points(
-            AGENCY, VectorFilter(case_record_id=case_a)
+            AGENCY, VectorFilter(case_record_ids=[case_a])
         )
