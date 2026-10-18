@@ -12,6 +12,7 @@ from quick_chat_api.modules.embedding.chunking.providers.structured import (
     StructuredFieldChunker,
 )
 from quick_chat_api.modules.embedding.chunking.registry import build_chunker
+from quick_chat_api.settings.config import settings
 
 
 class FakeEmbeddingProvider(EmbeddingProvider):
@@ -28,13 +29,16 @@ class FakeEmbeddingProvider(EmbeddingProvider):
     def max_tokens(self) -> int:
         return self._max_tokens
 
-    def count_tokens(self, text: str) -> int:
-        return len(text.split())
+    async def ensure_ready(self) -> None:
+        return None
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def count_tokens_batch(self, texts: list[str]) -> list[int]:
+        return [len(t.split()) for t in texts]
+
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [[0.0] * self.dimension for _ in texts]
 
-    def embed_query(self, text: str) -> list[float]:
+    async def embed_query(self, text: str) -> list[float]:
         return [0.0] * self.dimension
 
 
@@ -48,9 +52,9 @@ def provider() -> FakeEmbeddingProvider:
     return FakeEmbeddingProvider(max_tokens=10)  # budget = 9 at default 0.9 margin
 
 
-def test_document_under_budget_is_a_single_chunk(chunker, provider):
+async def test_document_under_budget_is_a_single_chunk(chunker, provider):
     content = "Case Number: 123\nCase Status: OPEN"
-    chunks = chunker.chunk(content, {"case_number": "123"}, provider)
+    chunks = await chunker.chunk(content, {"case_number": "123"}, provider)
 
     assert len(chunks) == 1
     assert chunks[0].content == content
@@ -59,7 +63,7 @@ def test_document_under_budget_is_a_single_chunk(chunker, provider):
     assert chunks[0].metadata["total_chunks"] == 1
 
 
-def test_document_over_budget_packs_whole_lines_per_chunk(chunker, provider):
+async def test_document_over_budget_packs_whole_lines_per_chunk(chunker, provider):
     lines = [
         "Field1: aaa bbb ccc",  # 4 tokens
         "Field2: ddd eee fff",  # 4 tokens
@@ -67,7 +71,7 @@ def test_document_over_budget_packs_whole_lines_per_chunk(chunker, provider):
     ]
     content = "\n".join(lines)
 
-    chunks = chunker.chunk(content, {}, provider)
+    chunks = await chunker.chunk(content, {}, provider)
 
     assert len(chunks) == 2
     assert chunks[0].content == "\n".join(lines[:2])
@@ -82,13 +86,13 @@ def test_document_over_budget_packs_whole_lines_per_chunk(chunker, provider):
             assert line in chunk.content
 
 
-def test_oversized_single_line_falls_back_to_overlapping_token_windows(
+async def test_oversized_single_line_falls_back_to_overlapping_token_windows(
     chunker, provider
 ):
     words = [f"w{i}" for i in range(30)]
     content = " ".join(words)  # 30 tokens, budget is 9 -> must split further
 
-    chunks = chunker.chunk(content, {}, provider)
+    chunks = await chunker.chunk(content, {}, provider)
 
     assert len(chunks) > 1
     assert all(
@@ -111,23 +115,24 @@ def test_oversized_single_line_falls_back_to_overlapping_token_windows(
     assert covered == set(words)
 
 
-def test_many_single_word_lines_that_each_exceed_budget_terminates(chunker, provider):
+async def test_many_single_word_lines_that_each_exceed_budget_terminates(
+    chunker, provider
+):
     # Degenerate case: every "word" alone exceeds the budget, so each
     # window is a single word -- must not infinite-loop on overlap math.
     content = " ".join(f"w{i}" for i in range(5))
     tiny_provider = FakeEmbeddingProvider(max_tokens=1)  # budget rounds to 1 (min)
 
-    chunks = tiny_provider.count_tokens("w0")  # sanity: 1 token per word
-    assert chunks == 1
+    assert await tiny_provider.count_tokens_batch(["w0"]) == [1]  # 1 token per word
 
-    result = chunker.chunk(content, {}, tiny_provider)
+    result = await chunker.chunk(content, {}, tiny_provider)
 
     assert len(result) == 5
     assert [c.content for c in result] == [f"w{i}" for i in range(5)]
 
 
-def test_document_metadata_is_merged_into_every_chunk(chunker, provider):
-    chunks = chunker.chunk(
+async def test_document_metadata_is_merged_into_every_chunk(chunker, provider):
+    chunks = await chunker.chunk(
         "Case Number: 123", {"case_number": "123", "source_type": "case"}, provider
     )
 
@@ -137,8 +142,8 @@ def test_document_metadata_is_merged_into_every_chunk(chunker, provider):
     assert "chunking_version" in chunks[0].metadata
 
 
-def test_empty_content_produces_no_chunks(chunker, provider):
-    assert chunker.chunk("", {}, provider) == []
+async def test_empty_content_produces_no_chunks(chunker, provider):
+    assert await chunker.chunk("", {}, provider) == []
 
 
 def test_registry_raises_on_unknown_strategy():
@@ -152,3 +157,12 @@ def test_factory_returns_cached_structured_chunker():
 
     assert first is second
     assert isinstance(first, StructuredFieldChunker)
+
+
+async def test_oversized_line_windows_match_linear_scan(chunker, provider):
+    # Binary-search window ends must equal the original word-by-word scan.
+    words = [f"w{i}" for i in range(37)]
+    chunks = await chunker.chunk(" ".join(words), {}, provider)
+    budget = int(provider.max_tokens * settings.CHUNK_TOKEN_SAFETY_MARGIN)
+    assert all(c.token_count <= budget for c in chunks)
+    assert chunks[0].content.split() == words[:budget]

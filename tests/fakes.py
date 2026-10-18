@@ -30,13 +30,16 @@ class FakeEmbeddingProvider(EmbeddingProvider):
     def max_tokens(self) -> int:
         return 512
 
-    def count_tokens(self, text: str) -> int:
-        return len(text.split())
+    async def ensure_ready(self) -> None:
+        return None
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def count_tokens_batch(self, texts: list[str]) -> list[int]:
+        return [len(t.split()) for t in texts]
+
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         return [self._vector(t) for t in texts]
 
-    def embed_query(self, text: str) -> list[float]:
+    async def embed_query(self, text: str) -> list[float]:
         return self._vector(text)
 
     def _vector(self, text: str) -> list[float]:

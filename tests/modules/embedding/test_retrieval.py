@@ -16,7 +16,7 @@ def _point(
 ):
     return VectorPoint(
         id=uuid4(),
-        vector=embedding.embed_query(text),
+        vector=asyncio.run(embedding.embed_query(text)),
         payload={
             "content": text,
             "source_type": source_type,

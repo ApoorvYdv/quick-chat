@@ -43,6 +43,7 @@ def _entity(
 
 def _chunker(chunks_per_entity: int = 1) -> MagicMock:
     chunker = MagicMock()
+    chunker.chunk = AsyncMock()
     chunker.chunk.side_effect = lambda content, metadata, provider: [
         Chunk(content=f"{content}#{i}", index=i, token_count=3, metadata={"i": i})
         for i in range(chunks_per_entity)

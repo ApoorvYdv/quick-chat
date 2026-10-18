@@ -30,13 +30,22 @@ class EmbeddingProvider(ABC):
         """Maximum input sequence length the model accepts, in tokens."""
 
     @abstractmethod
-    def count_tokens(self, text: str) -> int:
-        """Exact token count for `text` under this model's own tokenizer."""
+    async def ensure_ready(self) -> None:
+        """Verify the backend matches the configured model/dimension.
+
+        Idempotent. Must be awaited before reading `dimension`/`max_tokens`
+        on providers that learn them from a remote service; every async
+        method below calls it itself.
+        """
 
     @abstractmethod
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def count_tokens_batch(self, texts: list[str]) -> list[int]:
+        """Exact token counts for `texts` under this model's own tokenizer."""
+
+    @abstractmethod
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a batch of documents/chunks for storage. Batch, never one-by-one."""
 
     @abstractmethod
-    def embed_query(self, text: str) -> list[float]:
+    async def embed_query(self, text: str) -> list[float]:
         """Embed a single user query for similarity search."""

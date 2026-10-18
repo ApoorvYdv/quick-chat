@@ -1,11 +1,13 @@
 """Embedding provider that calls the shared inference service over HTTP.
 
 The service hosts the model once; API workers stay light. Model identity is
-checked against `EMBEDDING_MODEL`/`EMBEDDING_DIM` at startup so the indexing
-key stays valid when switching `local` <-> `remote`.
+checked against `EMBEDDING_MODEL`/`EMBEDDING_DIM` on first use (`ensure_ready`)
+so the indexing key stays valid when switching `local` <-> `remote`.
 """
 
 from __future__ import annotations
+
+import asyncio
 
 import httpx
 
@@ -25,26 +27,36 @@ class RemoteEmbeddingProvider(EmbeddingProvider):
         expected_model: str,
         expected_dimension: int,
         timeout_s: float,
-        client: httpx.Client | None = None,
+        client: httpx.AsyncClient | None = None,
     ) -> None:
-        self._client = client or httpx.Client(base_url=base_url, timeout=timeout_s)
-        info = self._post_or_get("GET", "/info")
-        if info["model"] != expected_model:
-            raise EmbeddingProviderError(
-                f"Inference service serves model '{info['model']}', "
-                f"but EMBEDDING_MODEL is '{expected_model}'."
-            )
-        if info["dimension"] != expected_dimension:
-            raise EmbeddingDimensionMismatchError(
-                f"Inference service outputs {info['dimension']}-dim vectors, "
-                f"but EMBEDDING_DIM is configured as {expected_dimension}."
-            )
-        self._dimension: int = info["dimension"]
-        self._max_tokens: int = info["max_tokens"]
+        self._client = client or httpx.AsyncClient(base_url=base_url, timeout=timeout_s)
+        self._expected_model = expected_model
+        self._expected_dimension = expected_dimension
+        self._lock = asyncio.Lock()
+        self._info: dict | None = None
 
-    def _post_or_get(self, method: str, path: str, json: dict | None = None) -> dict:
+    async def ensure_ready(self) -> None:
+        if self._info is not None:
+            return
+        async with self._lock:
+            if self._info is not None:
+                return
+            info = await self._request("GET", "/info")
+            if info["model"] != self._expected_model:
+                raise EmbeddingProviderError(
+                    f"Inference service serves model '{info['model']}', "
+                    f"but EMBEDDING_MODEL is '{self._expected_model}'."
+                )
+            if info["dimension"] != self._expected_dimension:
+                raise EmbeddingDimensionMismatchError(
+                    f"Inference service outputs {info['dimension']}-dim vectors, "
+                    f"but EMBEDDING_DIM is configured as {self._expected_dimension}."
+                )
+            self._info = info
+
+    async def _request(self, method: str, path: str, json: dict | None = None) -> dict:
         try:
-            response = self._client.request(method, path, json=json)
+            response = await self._client.request(method, path, json=json)
             response.raise_for_status()
         except httpx.HTTPError as exc:
             raise EmbeddingProviderError(
@@ -52,29 +64,39 @@ class RemoteEmbeddingProvider(EmbeddingProvider):
             ) from exc
         return response.json()
 
+    async def _call(self, path: str, json: dict) -> dict:
+        await self.ensure_ready()
+        return await self._request("POST", path, json)
+
+    def _ready_info(self) -> dict:
+        if self._info is None:
+            raise EmbeddingProviderError(
+                "Remote embedding provider used before `await ensure_ready()`."
+            )
+        return self._info
+
     @property
     def dimension(self) -> int:
-        return self._dimension
+        return self._ready_info()["dimension"]
 
     @property
     def max_tokens(self) -> int:
-        return self._max_tokens
+        return self._ready_info()["max_tokens"]
 
-    def count_tokens(self, text: str) -> int:
-        # ponytail: one HTTP call per count; add a batch API to the interface if chunking gets slow
-        return self._post_or_get("POST", "/count_tokens", {"texts": [text]})["counts"][
-            0
-        ]
-
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def count_tokens_batch(self, texts: list[str]) -> list[int]:
         if not texts:
             return []
-        return self._post_or_get(
-            "POST", "/embed", {"texts": texts, "kind": "document"}
-        )["embeddings"]
+        return (await self._call("/count_tokens", {"texts": texts}))["counts"]
 
-    def embed_query(self, text: str) -> list[float]:
-        return self._post_or_get("POST", "/embed", {"texts": [text], "kind": "query"})[
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        return (await self._call("/embed", {"texts": texts, "kind": "document"}))[
+            "embeddings"
+        ]
+
+    async def embed_query(self, text: str) -> list[float]:
+        return (await self._call("/embed", {"texts": [text], "kind": "query"}))[
             "embeddings"
         ][0]
 

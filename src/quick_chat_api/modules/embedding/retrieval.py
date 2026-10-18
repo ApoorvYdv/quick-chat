@@ -68,7 +68,7 @@ async def retrieve(
     `case_record_ids`/`source_types` narrow the search server-side (never a
     global search filtered afterward in Python), per `.claude/rules/rag.md`.
     """
-    query_vector = get_embedding_provider().embed_query(query)
+    query_vector = await get_embedding_provider().embed_query(query)
     filter_ = VectorFilter(case_record_ids=case_record_ids, source_types=source_types)
     hits = await asyncio.to_thread(
         get_vector_store().search,

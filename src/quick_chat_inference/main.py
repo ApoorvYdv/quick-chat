@@ -106,7 +106,7 @@ async def readyz(request: Request) -> dict[str, str]:
 
 
 @app.get("/info", response_model=InfoResponse)
-def info(provider: Provider) -> InfoResponse:
+async def info(provider: Provider) -> InfoResponse:
     return InfoResponse(
         model=settings.EMBEDDING_MODEL,
         version=settings.EMBEDDING_VERSION,
@@ -115,18 +115,20 @@ def info(provider: Provider) -> InfoResponse:
     )
 
 
-# Sync handlers: FastAPI runs them in the threadpool so CPU-bound encoding
-# never blocks the event loop.
 @app.post("/embed", response_model=EmbedResponse)
-def embed(body: EmbedRequest, provider: Provider) -> EmbedResponse:
+async def embed(body: EmbedRequest, provider: Provider) -> EmbedResponse:
     if body.kind == "query":
-        return EmbedResponse(embeddings=[provider.embed_query(t) for t in body.texts])
-    return EmbedResponse(embeddings=provider.embed_documents(body.texts))
+        return EmbedResponse(
+            embeddings=[await provider.embed_query(t) for t in body.texts]
+        )
+    return EmbedResponse(embeddings=await provider.embed_documents(body.texts))
 
 
 @app.post("/count_tokens", response_model=CountTokensResponse)
-def count_tokens(body: CountTokensRequest, provider: Provider) -> CountTokensResponse:
-    return CountTokensResponse(counts=[provider.count_tokens(t) for t in body.texts])
+async def count_tokens(
+    body: CountTokensRequest, provider: Provider
+) -> CountTokensResponse:
+    return CountTokensResponse(counts=await provider.count_tokens_batch(body.texts))
 
 
 @app.post("/rerank", response_model=RerankResponse)

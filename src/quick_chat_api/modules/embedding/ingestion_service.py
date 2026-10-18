@@ -177,6 +177,7 @@ class CaseIngestionService:
 
     async def _run(self, case_id: UUID, *, force: bool) -> CaseIngestionResult:
         provider = get_embedding_provider()
+        await provider.ensure_ready()
         chunker = get_chunker()
         indexing_key = _indexing_key(provider)
 
@@ -219,10 +220,10 @@ class CaseIngestionService:
                 continue
 
             try:
-                chunks = chunker.chunk(
+                chunks = await chunker.chunk(
                     entity.document.content, entity.document.metadata, provider
                 )
-                vectors = provider.embed_documents([c.content for c in chunks])
+                vectors = await provider.embed_documents([c.content for c in chunks])
                 await self._write(
                     entity, content_hash, indexing_key, chunks, vectors, existing
                 )

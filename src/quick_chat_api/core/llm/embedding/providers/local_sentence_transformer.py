@@ -8,6 +8,7 @@ code changes required.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from quick_chat_api.core.llm.embedding.base import EmbeddingProvider
@@ -65,14 +66,25 @@ class LocalSentenceTransformerProvider(EmbeddingProvider):
     def max_tokens(self) -> int:
         return self._max_tokens
 
-    def count_tokens(self, text: str) -> int:
-        # The model's own HF tokenizer, not a batch/padded call, so the
-        # count reflects exactly what this text alone would encode to.
-        return len(self._model.tokenizer.encode(text, add_special_tokens=True))
+    async def ensure_ready(self) -> None:
+        """Model is loaded and dimension-checked in `__init__`."""
 
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+    async def count_tokens_batch(self, texts: list[str]) -> list[int]:
+        return await asyncio.to_thread(self._count_tokens_batch, texts)
+
+    def _count_tokens_batch(self, texts: list[str]) -> list[int]:
+        # The model's own HF tokenizer, one text at a time (no padding), so
+        # each count reflects exactly what that text alone would encode to.
+        return [
+            len(self._model.tokenizer.encode(t, add_special_tokens=True)) for t in texts
+        ]
+
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
+        return await asyncio.to_thread(self._embed_documents, texts)
+
+    def _embed_documents(self, texts: list[str]) -> list[list[float]]:
         prefixed = [f"{self._document_prefix}{t}" for t in texts]
         embeddings = self._model.encode(
             prefixed,
@@ -83,7 +95,10 @@ class LocalSentenceTransformerProvider(EmbeddingProvider):
         )
         return embeddings.tolist()
 
-    def embed_query(self, text: str) -> list[float]:
+    async def embed_query(self, text: str) -> list[float]:
+        return await asyncio.to_thread(self._embed_query, text)
+
+    def _embed_query(self, text: str) -> list[float]:
         embedding = self._model.encode(
             f"{self._query_prefix}{text}",
             convert_to_numpy=True,

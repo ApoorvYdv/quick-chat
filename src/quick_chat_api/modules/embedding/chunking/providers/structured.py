@@ -20,7 +20,7 @@ from quick_chat_api.settings.config import settings
 class StructuredFieldChunker(Chunker):
     """Greedily packs field lines into chunks under a per-chunk token budget."""
 
-    def chunk(
+    async def chunk(
         self,
         content: str,
         document_metadata: dict,
@@ -29,13 +29,13 @@ class StructuredFieldChunker(Chunker):
         budget = self._token_budget(provider)
         lines = [line for line in content.split("\n") if line]
 
-        pieces = self._pack_lines(lines, provider, budget)
-        return self._build_chunks(pieces, document_metadata, provider)
+        pieces = await self._pack_lines(lines, provider, budget)
+        return await self._build_chunks(pieces, document_metadata, provider)
 
     def _token_budget(self, provider: EmbeddingProvider) -> int:
         return max(1, int(provider.max_tokens * settings.CHUNK_TOKEN_SAFETY_MARGIN))
 
-    def _pack_lines(
+    async def _pack_lines(
         self,
         lines: list[str],
         provider: EmbeddingProvider,
@@ -44,19 +44,18 @@ class StructuredFieldChunker(Chunker):
         pieces: list[tuple[str, SplitReason]] = []
         current_lines: list[str] = []
         current_tokens = 0
+        line_counts = await provider.count_tokens_batch(lines)
 
         def flush() -> None:
             if current_lines:
                 pieces.append(("\n".join(current_lines), SplitReason.FIELD_PACKED))
 
-        for line in lines:
-            line_tokens = provider.count_tokens(line)
-
+        for line, line_tokens in zip(lines, line_counts, strict=True):
             if line_tokens > budget:
                 flush()
                 current_lines.clear()
                 current_tokens = 0
-                for window in self._split_oversized_line(line, provider, budget):
+                for window in await self._split_oversized_line(line, provider, budget):
                     pieces.append((window, SplitReason.TOKEN_WINDOW_FALLBACK))
                 continue
 
@@ -76,7 +75,7 @@ class StructuredFieldChunker(Chunker):
 
         return pieces
 
-    def _split_oversized_line(
+    async def _split_oversized_line(
         self,
         line: str,
         provider: EmbeddingProvider,
@@ -87,9 +86,9 @@ class StructuredFieldChunker(Chunker):
         Rare path (a single unusually long free-text field): walks word by
         word rather than by token offsets, since the `EmbeddingProvider`
         interface exposes counting but not tokenizer offset mapping. This
-        keeps the interface minimal at the cost of O(n) `count_tokens`
-        calls per oversized line -- acceptable given how infrequently this
-        branch runs.
+        keeps the interface minimal. Each window's end is found by binary
+        search (token count is monotonic in prefix length), so an oversized
+        line costs O(windows * log n) batch calls.
         """
         words = line.split(" ")
         overlap_ratio = settings.CHUNK_OVERLAP_RATIO
@@ -97,12 +96,17 @@ class StructuredFieldChunker(Chunker):
         start = 0
 
         while start < len(words):
-            end = start + 1
-            while (
-                end < len(words)
-                and provider.count_tokens(" ".join(words[start : end + 1])) <= budget
-            ):
-                end += 1
+            lo, hi = start + 1, len(words)  # largest fitting end; lo always allowed
+            while lo < hi:
+                mid = (lo + hi + 1) // 2
+                [tokens] = await provider.count_tokens_batch(
+                    [" ".join(words[start:mid])]
+                )
+                if tokens <= budget:
+                    lo = mid
+                else:
+                    hi = mid - 1
+            end = lo
             windows.append(" ".join(words[start:end]))
 
             if end >= len(words):
@@ -116,7 +120,7 @@ class StructuredFieldChunker(Chunker):
 
         return windows
 
-    def _build_chunks(
+    async def _build_chunks(
         self,
         pieces: list[tuple[str, SplitReason]],
         document_metadata: dict,
@@ -124,12 +128,15 @@ class StructuredFieldChunker(Chunker):
     ) -> list[Chunk]:
         total = len(pieces)
         chunks = []
-        for index, (piece_text, reason) in enumerate(pieces):
+        counts = await provider.count_tokens_batch([text for text, _ in pieces])
+        for index, ((piece_text, reason), token_count) in enumerate(
+            zip(pieces, counts, strict=True)
+        ):
             chunks.append(
                 Chunk(
                     content=piece_text,
                     index=index,
-                    token_count=provider.count_tokens(piece_text),
+                    token_count=token_count,
                     metadata={
                         **document_metadata,
                         "chunking_strategy": "structured",

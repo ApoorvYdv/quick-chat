@@ -51,7 +51,7 @@ class Chunker(ABC):
     """Splits one projected document into token-budget-respecting chunks."""
 
     @abstractmethod
-    def chunk(
+    async def chunk(
         self,
         content: str,
         document_metadata: dict,

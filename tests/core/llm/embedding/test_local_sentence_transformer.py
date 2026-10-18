@@ -54,8 +54,15 @@ def test_max_tokens_reflects_model_seq_length(local_provider):
     assert local_provider.max_tokens == 384
 
 
-def test_count_tokens_uses_the_real_tokenizer(local_provider):
-    assert local_provider.count_tokens("hello world") == 4  # 2 words + 2 specials
+async def test_count_tokens_uses_the_real_tokenizer(local_provider):
+    counts = await local_provider.count_tokens_batch(["hello world", "a"])
+    assert counts == [4, 3]  # words + 2 specials
+
+
+async def test_embed_runs_off_the_event_loop(local_provider):
+    assert len(await local_provider.embed_query("q")) == 768
+    assert len(await local_provider.embed_documents(["a", "b"])) == 2
+    assert await local_provider.embed_documents([]) == []
 
 
 def test_dimension_mismatch_raises(monkeypatch):
