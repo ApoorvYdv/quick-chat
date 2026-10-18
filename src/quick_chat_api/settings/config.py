@@ -100,6 +100,32 @@ class Settings(BaseSettings):
         "are physically isolated per tenant rather than only payload-filtered",
     )
 
+    # Reranking
+    RERANK_PROVIDER: str = Field(
+        default="cross_encoder",
+        description="Reranker: 'cross_encoder' (in-process), 'remote' (inference "
+        "service) or 'none' (passthrough of the first RERANK_TOP_N candidates)",
+    )
+    RERANK_MODEL: str = Field(
+        default="BAAI/bge-reranker-base", description="Cross-encoder model name"
+    )
+    RERANK_DEVICE: str = Field(default="cpu", description="Cross-encoder device")
+    RERANK_TOP_N: int = Field(
+        default=5, description="Candidates kept after reranking", gt=0
+    )
+    RERANK_MIN_SCORE: float = Field(
+        default=0.0,
+        description="Raw cross-encoder logit threshold; candidates scoring below it "
+        "are dropped (0.0 = the model judges the candidate not relevant)",
+    )
+    RERANK_REMOTE_URL: str = Field(
+        default="http://inference:8001",
+        description="Base URL of the inference service, used when RERANK_PROVIDER=remote",
+    )
+    RERANK_REMOTE_TIMEOUT_S: float = Field(
+        default=30.0, description="Timeout for inference service rerank calls", gt=0
+    )
+
     # Chunking
     CHUNKING_STRATEGY: str = Field(
         default="structured",

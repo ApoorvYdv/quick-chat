@@ -26,15 +26,15 @@
 
 ### T03-reranker — core/llm/reranking (Interface+Registry+Factory: cross_encoder, remote, none) plus /rerank on quick_chat_inference; keeps top 5 above RERANK_MIN_SCORE, never widens scope
 
-- state/risk: active / medium
+- state/risk: done / medium
 - requirements: FR-9, AC-5
 - scope: src/quick_chat_api/core/llm/reranking, src/quick_chat_inference, src/quick_chat_api/settings/config.py, .env.example, tests/core/llm/reranking, tests/inference
-- gates: tests: uv run pytest tests/core/llm/reranking tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/llm/reranking tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T04-structured-cross-case — Tenant-scoped structured tools: party-name lookup (exact then pg_trgm, candidates), case-attribute filter, appearance status+date filter, payments for resolved cases; lists capped at 20 with total and truncated flag
 
-- state/risk: queued / medium
+- state/risk: active / medium
 - requirements: FR-4, FR-6, FR-7, AC-1, AC-2, AC-8, NFR-1
 - scope: src/quick_chat_api/modules/rag/structured, tests/modules/rag
 - gates: tests: uv run pytest tests/modules/rag -q, integration: uv run pytest -m integration tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending

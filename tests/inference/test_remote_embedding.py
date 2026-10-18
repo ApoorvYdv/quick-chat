@@ -19,6 +19,7 @@ from tests.fakes import FakeEmbeddingProvider
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setattr(main, "build_provider", lambda *_: FakeEmbeddingProvider(8))
+    monkeypatch.setattr(main, "build_reranker", lambda *_: object())
     with TestClient(main.app, base_url="http://inference") as c:
         yield c
 

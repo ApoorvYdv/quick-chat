@@ -4,11 +4,11 @@
 
 - objective: Build a production-ready agentic RAG application with high accuracy and answer relevancy: replace the single-case-scoped flow with query rewriting, deterministic-first (LLM fallback) routing to Case, Financial and Procedural agents (structured + hybrid vector search with reranking, top 10 -> top 5), a supervisor that checks context relevance and retries agents up to a limit, grounded answer generation, full logging and LangSmith tracing per agent, and evals for every agent and component; must support cross-case questions such as all cases for a defendant or all REGISTERED cases for a hearing date.
 - phase/status: build/active
-- active task: T03-reranker — core/llm/reranking (Interface+Registry+Factory: cross_encoder, remote, none) plus /rerank on quick_chat_inference; keeps top 5 above RERANK_MIN_SCORE, never widens scope
+- active task: T04-structured-cross-case — Tenant-scoped structured tools: party-name lookup (exact then pg_trgm, candidates), case-attribute filter, appearance status+date filter, payments for resolved cases; lists capped at 20 with total and truncated flag
 - blocker: none
 - next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pending, lint:pending, independent-review:pending
+- gates: tests:pending, integration:pending, lint:pending, independent-review:pending
 - recent failures: none
 
 ## Resume
@@ -17,9 +17,9 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: 7fff48b88f7ce8dcf6521cde5f12a22f2857d085b2c8ead389ac6b22ebdfbb71. Use --since only after receiving that full packet; kickoff is not the packet.
-- DECISION-2ea1bf2a: Reranker: local cross-encoder in inference service
-- KNOWLEDGE-c71460a0: Vector search is dense-only, no reranker
-- KNOWLEDGE-0436dace: Current RAG graph is a linear placeholder
+Context fingerprint: 1849cd0f8c011fa1db7990f7fd9511c9a68a83fe18408fd460eadb1cef96a307. Use --since only after receiving that full packet; kickoff is not the packet.
+- DECISION-77aa20e5: Party-name matching: exact then fuzzy with candidates
+- KNOWLEDGE-1646c414: Structured queries are case_id-scoped only
+- DECISION-db99641c: Cross-case list cap 20
 Applicable invariants, active rules, authorization and proof references are in the packet. Truncated summaries are retrieval pointers, not the full evidence.
 Reuse fresh gates with --reuse. Reconcile interrupted attempts before replaying commands. Report state → evidence → blocker → next action; checkpoint before stopping.

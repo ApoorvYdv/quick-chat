@@ -16,6 +16,11 @@ from pydantic import BaseModel
 from quick_chat_api.core.llm.embedding import providers as _providers  # noqa: F401
 from quick_chat_api.core.llm.embedding.base import EmbeddingProvider
 from quick_chat_api.core.llm.embedding.registry import build_provider
+from quick_chat_api.core.llm.reranking import (
+    providers as _rerank_providers,  # noqa: F401
+)
+from quick_chat_api.core.llm.reranking.base import RerankCandidate, RerankProvider
+from quick_chat_api.core.llm.reranking.registry import build_reranker
 from quick_chat_api.settings.config import settings
 
 
@@ -43,9 +48,29 @@ class CountTokensResponse(BaseModel):
     counts: list[int]
 
 
+class RerankCandidateIn(BaseModel):
+    id: str
+    text: str
+
+
+class RerankRequest(BaseModel):
+    query: str
+    candidates: list[RerankCandidateIn]
+
+
+class RerankResultOut(BaseModel):
+    id: str
+    score: float
+
+
+class RerankResponse(BaseModel):
+    results: list[RerankResultOut]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.provider = build_provider("local", settings)
+    app.state.reranker = build_reranker("cross_encoder", settings)
     yield
 
 
@@ -56,7 +81,12 @@ def get_provider(request: Request) -> EmbeddingProvider:
     return request.app.state.provider
 
 
+def get_reranker(request: Request) -> RerankProvider:
+    return request.app.state.reranker
+
+
 Provider = Annotated[EmbeddingProvider, Depends(get_provider)]
+Reranker = Annotated[RerankProvider, Depends(get_reranker)]
 
 
 @app.get("/healthz")
@@ -66,7 +96,11 @@ async def healthz() -> dict[str, str]:
 
 @app.get("/readyz")
 async def readyz(request: Request) -> dict[str, str]:
-    if getattr(request.app.state, "provider", None) is None:
+    state = request.app.state
+    if (
+        getattr(state, "provider", None) is None
+        or getattr(state, "reranker", None) is None
+    ):
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
     return {"status": "ok"}
 
@@ -93,3 +127,13 @@ def embed(body: EmbedRequest, provider: Provider) -> EmbedResponse:
 @app.post("/count_tokens", response_model=CountTokensResponse)
 def count_tokens(body: CountTokensRequest, provider: Provider) -> CountTokensResponse:
     return CountTokensResponse(counts=[provider.count_tokens(t) for t in body.texts])
+
+
+@app.post("/rerank", response_model=RerankResponse)
+async def rerank(body: RerankRequest, reranker: Reranker) -> RerankResponse:
+    results = await reranker.rerank(
+        body.query, [RerankCandidate(c.id, c.text) for c in body.candidates]
+    )
+    return RerankResponse(
+        results=[RerankResultOut(id=r.id, score=r.score) for r in results]
+    )

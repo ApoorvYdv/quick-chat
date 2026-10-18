@@ -1,0 +1,30 @@
+{
+  "task": "T03-reranker",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "69c58feb-f88b-4d04-9afb-6e43450e9a51",
+  "command": "uv run pytest tests/core/llm/reranking tests/inference -q",
+  "started_at": "2026-10-18T06:13:35.876Z",
+  "observed_at": "2026-10-18T06:13:43.709Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n.........                                                                [100%]Running teardown with pytest sessionfinish...\n\n=============================== warnings summary ===============================\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n.venv/lib/python3.14/site-packages/starlette/testclient.py:53\n  /Users/apoorv/Developer/python-projects/quick-chat/.venv/lib/python3.14/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.\n    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n9 passed, 8 warnings in 5.34s\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "aa89321efb43fd56449647b1dfbd6747406158dc",
+    "dirty": true
+  },
+  "source_hash": "66882a7d89614f3e49b1e183eb1666d9ac618529019e049e26786187993c43f8",
+  "before_hash": "66882a7d89614f3e49b1e183eb1666d9ac618529019e049e26786187993c43f8",
+  "config_hash": "3f972db4b4e16f367ec0fdfa8c4cac67000567f05a9bebad4029685d02ba3580",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "1789794a2a6b2a639f200c4aa77547d2b32f3f6d69c5c671ea9ece9748cf5400"
+}
