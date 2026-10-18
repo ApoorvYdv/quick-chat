@@ -4,7 +4,7 @@
 
 - workflow: new-product
 - phase: build
-- plan approval: Apoorv at 2026-10-18T06:04:57.348Z
+- plan approval: pending
 
 ## Tasks
 
@@ -32,15 +32,23 @@
 - gates: tests: uv run pytest tests/core/llm/reranking tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
-### T04-structured-cross-case — Tenant-scoped structured tools: party-name lookup (exact then pg_trgm, candidates), case-attribute filter, appearance status+date filter, payments for resolved cases; lists capped at 20 with total and truncated flag
+### T04-embedding-async — EmbeddingProvider async: embed_documents/embed_query async, count_tokens async batch API, local via asyncio.to_thread, remote via httpx.AsyncClient with lazy first-use /info check; all callers and inference service updated
 
 - state/risk: active / medium
+- requirements: FR-8, AC-5
+- scope: src/quick_chat_api/core/llm/embedding, src/quick_chat_inference, src/quick_chat_api/modules/embedding, tests/fakes.py, tests/core/llm/embedding, tests/modules/embedding, tests/inference
+- gates: tests: uv run pytest tests/core/llm/embedding tests/modules/embedding tests/inference -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- next: Run the task pre-flight.
+
+### T05-structured-cross-case — Tenant-scoped structured tools: party-name lookup (exact then pg_trgm, candidates), case-attribute filter, appearance status+date filter, payments for resolved cases; lists capped at 20 with total and truncated flag
+
+- state/risk: queued / medium
 - requirements: FR-4, FR-6, FR-7, AC-1, AC-2, AC-8, NFR-1
 - scope: src/quick_chat_api/modules/rag/structured, tests/modules/rag
 - gates: tests: uv run pytest tests/modules/rag -q, integration: uv run pytest -m integration tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
 - next: Run the task pre-flight.
 
-### T05-understand-route — Rewrite node (entity extraction + per-agent sub-queries, history-aware) and deterministic router with LLM structured-output fallback on no/conflicting route; route source recorded; versioned prompts
+### T06-understand-route — Rewrite node (entity extraction + per-agent sub-queries, history-aware) and deterministic router with LLM structured-output fallback on no/conflicting route; route source recorded; versioned prompts
 
 - state/risk: queued / medium
 - requirements: FR-1, FR-2, NFR-3
@@ -48,7 +56,7 @@
 - gates: tests: uv run pytest tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
 - next: Run the task pre-flight.
 
-### T06-agents — Case, Financial and Procedural agents built on T02-T05 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs
+### T07-agents — Case, Financial and Procedural agents built on T02-T06 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs
 
 - state/risk: queued / high
 - requirements: FR-3, FR-5, FR-6, FR-7, AC-3, NFR-1
@@ -56,7 +64,7 @@
 - gates: tests: uv run pytest tests/core/rag/agents -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
 - next: Run the task pre-flight.
 
-### T07-supervisor-context-generate — Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty
+### T08-supervisor-context-generate — Supervisor relevance grading with max 2 rewritten retries per agent, context builder (dedupe, prefer structured, metadata, token budget, conflicts) and grounded Claude generation with validated citations, clarification and no-LLM-on-empty
 
 - state/risk: queued / high
 - requirements: FR-10, FR-11, FR-12, AC-4, AC-7, AC-8, NFR-2, NFR-3, NFR-6
@@ -64,7 +72,7 @@
 - gates: tests: uv run pytest tests/core/rag tests/modules/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
 - next: Run the task pre-flight.
 
-### T08-graph-api-tracing — Graph rewired (rewrite -> route -> agents -> supervisor -> context -> generate -> finalize) behind unchanged /ask and /cases/{id}/ask JSON+SSE contracts; nested redacted LangSmith runs and structlog per step; cross-tenant and concurrency tests
+### T09-graph-api-tracing — Graph rewired (rewrite -> route -> agents -> supervisor -> context -> generate -> finalize) behind unchanged /ask and /cases/{id}/ask JSON+SSE contracts; nested redacted LangSmith runs and structlog per step; cross-tenant and concurrency tests
 
 - state/risk: queued / high
 - requirements: FR-13, FR-14, AC-6, AC-9, NFR-1, NFR-4
@@ -72,7 +80,7 @@
 - gates: tests: uv run pytest tests/core/rag tests/routers -q, integration: uv run pytest -m integration tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
 - next: Run the task pre-flight.
 
-### T09-evals — Golden datasets (southern_ute + synthetic second agency, dev/holdout split) and one eval command scoring rewrite, router, each structured tool, hybrid retrieval, reranker, supervisor, each agent and the end-to-end pipeline, with gate thresholds and optional LangSmith experiments
+### T10-evals — Golden datasets (southern_ute + synthetic second agency, dev/holdout split) and one eval command scoring rewrite, router, each structured tool, hybrid retrieval, reranker, supervisor, each agent and the end-to-end pipeline, with gate thresholds and optional LangSmith experiments
 
 - state/risk: queued / medium
 - requirements: FR-15, NFR-5, NFR-7, AC-10, AC-11
@@ -80,7 +88,7 @@
 - gates: tests: uv run pytest tests/evals -q, lint: uv run ruff check src tests evals && uv run mypy src, components: uv run python -m evals.run --suite components --gate, independent-review: pending
 - next: Run the task pre-flight.
 
-### T10-reindex-acceptance — southern_ute collection recreated with dense+sparse and re-ingested via backfill_embeddings; end-to-end acceptance (AC-1, AC-2, AC-11) and quality gate run on real dev data; models and data_ingestion untouched
+### T11-reindex-acceptance — southern_ute collection recreated with dense+sparse and re-ingested via backfill_embeddings; end-to-end acceptance (AC-1, AC-2, AC-11) and quality gate run on real dev data; models and data_ingestion untouched
 
 - state/risk: queued / high
 - requirements: FR-16, AC-1, AC-2, AC-11, AC-12
