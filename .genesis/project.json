@@ -9,7 +9,7 @@
     "non_goals": [],
     "trust_boundary": "local repository",
     "created_at": "2026-10-17T16:09:33.474Z",
-    "updated_at": "2026-10-17T16:47:04.363Z"
+    "updated_at": "2026-10-18T05:42:17.597Z"
   },
   "policy": {
     "ponytail": "full",
@@ -645,11 +645,11 @@
           "mandatory": true,
           "status": "pass",
           "evidence": {
-            "path": ".genesis/evidence/T02-hybrid-search-tests-d8f0cb57-51cf-490b-ba5d-66a4dfe79efb.json",
-            "hash": "7c22d79f02cb8398abab682cb931052ae57085e020e484b7a1ad465ea3bb196b",
+            "path": ".genesis/evidence/T02-hybrid-search-tests-07585100-5137-4b4d-a767-ce0ba17940fd.json",
+            "hash": "06ca0698fa412ff665ac2d1250f5efc44830530ffce2841bcea8801755e01c40",
             "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
             "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
-            "observed_at": "2026-10-17T16:46:52.622Z"
+            "observed_at": "2026-10-18T05:40:34.526Z"
           }
         },
         {
@@ -657,13 +657,13 @@
           "kind": "command",
           "command": "uv run pytest -m integration tests/core/vectorstore -q",
           "mandatory": true,
-          "status": "fail",
+          "status": "pass",
           "evidence": {
-            "path": ".genesis/evidence/T02-hybrid-search-integration-1262186a-81e1-4c39-bd9a-e134628539ab.json",
-            "hash": "a7cd683a31807b9426b504c33b5d960fdfe00a03d0d84c79f61065197becfeca",
+            "path": ".genesis/evidence/T02-hybrid-search-integration-8009e1cf-21ae-4f0c-be73-9cee97d1badd.json",
+            "hash": "5c1695eb20a0ee023a119103de7672951c877068d681074142fcfaeb8d582223",
             "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
             "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
-            "observed_at": "2026-10-17T16:47:03.975Z"
+            "observed_at": "2026-10-18T05:40:51.736Z"
           }
         },
         {
@@ -671,16 +671,28 @@
           "kind": "command",
           "command": "uv run ruff check src tests evals && uv run mypy src",
           "mandatory": true,
-          "status": "pending",
-          "evidence": null
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T02-hybrid-search-lint-7b329036-c34f-4bf0-b43c-49b6362cddc9.json",
+            "hash": "d00023743b2b2d25b23673dbc750d0140e26bcb1a4cae9859fc41569408bc15b",
+            "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+            "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+            "observed_at": "2026-10-18T05:40:56.309Z"
+          }
         },
         {
           "id": "independent-review",
           "kind": "review",
           "command": "",
           "mandatory": true,
-          "status": "pending",
-          "evidence": null
+          "status": "pass",
+          "evidence": {
+            "path": ".genesis/evidence/T02-hybrid-search-independent-review-b337b6c4-4059-4f6f-a83d-9e2a1e14ae9b.json",
+            "hash": "843cac866611b4bbbcf33fc2542403e61b2f323747bf57d6f5ca5801b4ac0607",
+            "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+            "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+            "observed_at": "2026-10-18T05:42:16.504Z"
+          }
         }
       ],
       "next_action": "Run the task pre-flight.",
@@ -1471,6 +1483,15 @@
       "human": "Apoorv",
       "reason": "Human reviewed T01 diff and tests/lint gate results; approved",
       "revision": null
+    },
+    {
+      "id": "b337b6c4-4059-4f6f-a83d-9e2a1e14ae9b",
+      "at": "2026-10-18T05:42:16.504Z",
+      "action": "approve",
+      "task": "T02-hybrid-search",
+      "human": "Apoorv",
+      "reason": "Human reviewed T02 diff and gate results (tests, integration, lint pass); approved",
+      "revision": null
     }
   ],
   "attempts": [
@@ -1665,6 +1686,78 @@
       "cost": null,
       "stop_reason": "command-failed",
       "ended_at": "2026-10-17T16:47:03.975Z"
+    },
+    {
+      "id": "07585100-5137-4b4d-a767-ce0ba17940fd",
+      "task": "T02-hybrid-search",
+      "kind": "gate",
+      "command": "uv run pytest tests/core/vectorstore tests/modules/embedding -q",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 66289,
+      "child_pid": 66434,
+      "started_at": "2026-10-18T05:40:21.647Z",
+      "status": "passed",
+      "before_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+      "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-18T05:40:34.526Z"
+    },
+    {
+      "id": "8009e1cf-21ae-4f0c-be73-9cee97d1badd",
+      "task": "T02-hybrid-search",
+      "kind": "gate",
+      "command": "uv run pytest -m integration tests/core/vectorstore -q",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 66289,
+      "child_pid": 67052,
+      "started_at": "2026-10-18T05:40:34.762Z",
+      "status": "passed",
+      "before_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+      "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-18T05:40:51.736Z"
+    },
+    {
+      "id": "7b329036-c34f-4bf0-b43c-49b6362cddc9",
+      "task": "T02-hybrid-search",
+      "kind": "gate",
+      "command": "uv run ruff check src tests evals && uv run mypy src",
+      "timeout": 120000,
+      "authorization": null,
+      "pid": 66289,
+      "child_pid": 67752,
+      "started_at": "2026-10-18T05:40:52.061Z",
+      "status": "passed",
+      "before_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+      "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+      "environment": {
+        "node": "v22.13.1",
+        "platform": "darwin",
+        "arch": "arm64",
+        "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+        "variables": {}
+      },
+      "cost": null,
+      "stop_reason": null,
+      "ended_at": "2026-10-18T05:40:56.309Z"
     }
   ],
   "authorizations": [],
@@ -1807,9 +1900,9 @@
     }
   },
   "checkpoint": {
-    "at": "2026-10-17T16:47:04.317Z",
+    "at": "2026-10-18T05:42:17.553Z",
     "revision": {
-      "commit": "43568c8896cc0baafa62e2edd20ccb3d08d69c71",
+      "commit": "d2ad3ffec39c981658383f749a9201f44c839b47",
       "dirty": true,
       "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e"
     },

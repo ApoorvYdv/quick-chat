@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "project": "quick-chat",
-  "revision": "43568c8896cc0baafa62e2edd20ccb3d08d69c71",
+  "revision": "d2ad3ffec39c981658383f749a9201f44c839b47",
   "sourceHash": "ed201a3982cfc8ca77af20d2b474366dcf692a614ed109a47985b749fd9f5bbe",
   "provenance": {
     "tool": "genesis-graphizer",
@@ -10597,8 +10597,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -12134,8 +12134,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.count_tokens",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.count_tokens",
         "symbol:src/quick_chat_inference/main.py#function:count_tokens",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -12163,8 +12163,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.count_tokens",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.count_tokens",
         "symbol:src/quick_chat_inference/main.py#function:count_tokens",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -12198,8 +12198,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.count_tokens",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.count_tokens",
         "symbol:src/quick_chat_inference/main.py#function:count_tokens",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -12782,8 +12782,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_documents",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_documents",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_documents",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_documents",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_documents"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_documents",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_documents"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -13766,8 +13766,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_query",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -14226,8 +14226,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_documents",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_documents",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_documents",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_documents",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_documents"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_documents",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_documents"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -14242,8 +14242,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_query",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -14431,8 +14431,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.count_tokens",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.count_tokens",
         "symbol:src/quick_chat_inference/main.py#function:count_tokens",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -15619,8 +15619,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.count_tokens",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.count_tokens",
         "symbol:src/quick_chat_inference/main.py#function:count_tokens",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.count_tokens",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.count_tokens"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -15635,8 +15635,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_documents",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_documents",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_documents",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_documents",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_documents"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_documents",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_documents"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -15651,8 +15651,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_query",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -16997,8 +16997,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.delete_case_index",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.delete_case_index",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:delete_case_index"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17097,8 +17097,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17252,8 +17252,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/controllers/ingestion_controller.py#function:IngestionController.reindex_case",
-        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case",
-        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case"
+        "symbol:src/quick_chat_api/modules/embedding/ingestion_service.py#function:CaseIngestionService.reindex_case",
+        "symbol:src/quick_chat_api/routers/ingestion_router.py#function:reindex_case"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17379,8 +17379,8 @@
         "symbol:src/quick_chat_api/core/llm/embedding/base.py#function:EmbeddingProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/local_sentence_transformer.py#function:LocalSentenceTransformerProvider.embed_query",
         "symbol:src/quick_chat_api/core/llm/embedding/providers/remote.py#function:RemoteEmbeddingProvider.embed_query",
-        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query",
-        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query"
+        "symbol:tests/fakes.py#function:FakeEmbeddingProvider.embed_query",
+        "symbol:tests/modules/embedding/chunking/test_structured_chunker.py#function:FakeEmbeddingProvider.embed_query"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17405,8 +17405,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17442,8 +17442,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17456,8 +17456,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,
@@ -17493,8 +17493,8 @@
       "tier": "ambiguous",
       "candidates": [
         "symbol:src/quick_chat_api/core/rag/graph.py#function:retrieve",
-        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve",
-        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve"
+        "symbol:src/quick_chat_api/modules/embedding/retrieval.py#function:retrieve",
+        "symbol:tests/routers/test_chat_router.py#function:test_real_node_replaces_fake_without_signature_change.retrieve"
       ],
       "resolved": false,
       "confidence": 0.3,

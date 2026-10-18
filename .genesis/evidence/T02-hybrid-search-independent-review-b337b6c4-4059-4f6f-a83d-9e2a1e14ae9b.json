@@ -1,0 +1,13 @@
+{
+  "task": "T02-hybrid-search",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "b337b6c4-4059-4f6f-a83d-9e2a1e14ae9b",
+  "human": "Apoorv",
+  "reason": "Human reviewed T02 diff and gate results (tests, integration, lint pass); approved",
+  "observed_at": "2026-10-18T05:42:16.504Z",
+  "source_hash": "f09fdbe21adcc22ee7cfd1929a2d483159b876738f82b6bf864b5fc1ff0ab27e",
+  "config_hash": "81e7b4cb6412d16b53fed91e51beacc6b8eb4a4cfb3feb27dce0fd765d576e8e",
+  "reviewed_proofs": "49b4a9f5fb0b33632b05111f4dba473e04223c10871ca617bb5f7f386ce4723e",
+  "hash": "843cac866611b4bbbcf33fc2542403e61b2f323747bf57d6f5ca5801b4ac0607"
+}

@@ -8,7 +8,7 @@
 - blocker: none
 - next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pass, integration:fail, lint:pending, independent-review:pending
+- gates: tests:pass, integration:pass, lint:pass, independent-review:pass
 - recent failures: none
 
 ## Resume
@@ -17,7 +17,7 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: 13a01a0ceedea4cda3bd9ed432a2fe3c0f56aa2ab1f8c2ac25a3cabb8af8792e. Use --since only after receiving that full packet; kickoff is not the packet.
-- DECISION-db99641c: Cross-case list cap 20
+Context fingerprint: b8bad8102445243cf5e506aeacd817b8d32ee0963a43e3ecf86e578ed2f3bd7d. Use --since only after receiving that full packet; kickoff is not the packet.
+- ASSUMPTION-fb711be8: SPEC.md supersedes PLAN.md S3/S4; PLAN.md S0-S2 work stays as built.
 Applicable invariants, active rules, authorization and proof references are in the packet. Truncated summaries are retrieval pointers, not the full evidence.
 Reuse fresh gates with --reuse. Reconcile interrupted attempts before replaying commands. Report state → evidence → blocker → next action; checkpoint before stopping.

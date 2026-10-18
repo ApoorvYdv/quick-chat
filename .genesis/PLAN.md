@@ -21,7 +21,7 @@
 - state/risk: active / high
 - requirements: FR-8, FR-16, AC-5
 - scope: src/quick_chat_api/core/vectorstore, src/quick_chat_api/modules/embedding/retrieval.py, src/quick_chat_api/modules/embedding/ingestion_service.py, src/quick_chat_api/settings/config.py, tests/core/vectorstore, tests/modules/embedding
-- gates: tests: uv run pytest tests/core/vectorstore tests/modules/embedding -q, integration: uv run pytest -m integration tests/core/vectorstore -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/vectorstore tests/modules/embedding -q, integration: uv run pytest -m integration tests/core/vectorstore -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T03-reranker — core/llm/reranking (Interface+Registry+Factory: cross_encoder, remote, none) plus /rerank on quick_chat_inference; keeps top 5 above RERANK_MIN_SCORE, never widens scope
