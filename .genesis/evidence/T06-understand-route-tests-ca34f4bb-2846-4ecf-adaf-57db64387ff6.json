@@ -1,0 +1,30 @@
+{
+  "task": "T06-understand-route",
+  "gate": "tests",
+  "kind": "command",
+  "attempt": "ca34f4bb-2846-4ecf-adaf-57db64387ff6",
+  "command": "uv run pytest tests/core/rag -q",
+  "started_at": "2026-10-18T19:00:39.747Z",
+  "observed_at": "2026-10-18T19:00:49.846Z",
+  "exit_code": 0,
+  "signal": null,
+  "stdout": "bringing up nodes...\nbringing up nodes...\n\n..................                                                       [100%]Running teardown with pytest sessionfinish...\n\n18 passed in 6.61s\n",
+  "stderr": "",
+  "failure": null,
+  "receipt": null,
+  "revision": {
+    "commit": "0e1364fb953b8587367488501feacfa45c42965f",
+    "dirty": true
+  },
+  "source_hash": "49f8313b2da72e8dab1fe336769210cf2499ebfaff3f90764717a9096d2a781f",
+  "before_hash": "49f8313b2da72e8dab1fe336769210cf2499ebfaff3f90764717a9096d2a781f",
+  "config_hash": "7c02da068a0c3c70af56de710f66cbb223722b6e4247aa646158d169845d145c",
+  "environment": {
+    "node": "v22.13.1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "verifier": "cbdddbf25e5ed5f3406b93881ae54f64d11a8c54f0bfe177d19d9d9946a6a971",
+    "variables": {}
+  },
+  "hash": "e287625aa8f17b313c7e51f603b416f1f29c86cce3ec90315c0c396602aee5ca"
+}

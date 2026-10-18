@@ -53,7 +53,7 @@
 - state/risk: active / medium
 - requirements: FR-1, FR-2, NFR-3
 - scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/core/rag/routing.py, src/quick_chat_api/core/llm/prompts, tests/core/rag
-- gates: tests: uv run pytest tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending
+- gates: tests: uv run pytest tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T07-agents — Case, Financial and Procedural agents built on T02-T06 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs

@@ -1,0 +1,13 @@
+{
+  "task": "T06-understand-route",
+  "gate": "independent-review",
+  "kind": "review",
+  "attempt": "c2a3b7b7-8142-46c2-8745-0b758b8b61ef",
+  "human": "Apoorv",
+  "reason": "reviewed T06 diff and proof",
+  "observed_at": "2026-10-18T18:58:47.600Z",
+  "source_hash": "49f8313b2da72e8dab1fe336769210cf2499ebfaff3f90764717a9096d2a781f",
+  "config_hash": "7c02da068a0c3c70af56de710f66cbb223722b6e4247aa646158d169845d145c",
+  "reviewed_proofs": "89ec4ee7edf24f681a00cc40204365900bef7570f67f3364066199a68d9fc431",
+  "hash": "b014b88751de134f1090b160d0b7c66352663d3ce906735f21578218d7c90bf4"
+}

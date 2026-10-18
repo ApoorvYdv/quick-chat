@@ -40,6 +40,10 @@ class PipelineState(TypedDict, total=False):
     mode: str
     resolved_case_ids: list[UUID]
     needs_clarification: str | None
+    entities: dict
+    sub_queries: dict[str, str]
+    agents: list[str]
+    route_source: str
     evidence: Annotated[list[EvidenceItem], UntrackedValue]
     contexts: Annotated[list[str], UntrackedValue]
     answer: str
@@ -62,6 +66,10 @@ def initial_state(
         "mode": request.mode,
         "resolved_case_ids": [],
         "needs_clarification": None,
+        "entities": {},
+        "sub_queries": {},
+        "agents": [],
+        "route_source": "",
         "evidence": [],
         "contexts": [],
         "answer": "",

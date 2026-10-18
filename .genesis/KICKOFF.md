@@ -8,7 +8,7 @@
 - blocker: none
 - next action: Run the task pre-flight.
 - phase instruction: Implement only the active task and prove it against current sources. Check `genesis query . impact PATH` before editing shared code.
-- gates: tests:pending, lint:pending, independent-review:pending
+- gates: tests:pass, lint:pass, independent-review:pass
 - recent failures: none
 
 ## Resume
@@ -17,7 +17,7 @@ Load Genesis and official Ponytail full, then run `genesis brief .` for the curr
 Fetch full records with `genesis context . --id ID` only when needed. Do not load project.json or historical proof wholesale.
 Ask the index before reading code: `genesis query . search|scope|callers|callees|impact|path` (`--json` for parsing). Run `genesis query . impact PATH` before editing shared code. Answers are advisory static analysis; `ambiguous` means candidates were not ruled out, so confirm in source.
 Run `genesis serve .` for a live map of the repository when structure is unclear; it reindexes on save and is read-only. Run `genesis index .` if the index is stale and nothing is watching.
-Context fingerprint: 295ca9f0369f5a47a4c849faf44d73f2c85e40f1bb1fb748963ad1307c14124d. Use --since only after receiving that full packet; kickoff is not the packet.
+Context fingerprint: 542a26bc49da9773a8dd4e24569c7ce65a8ba537bd6d921e2dfb46b29302c425. Use --since only after receiving that full packet; kickoff is not the packet.
 - DECISION-75684a9f: Agentic multi-agent flow replaces single-case scoping
 - DECISION-c1c87ad6: LLM provider: Claude via Anthropic
 - DECISION-9cd707c2: Latency target p95 < 12 s non-streaming
