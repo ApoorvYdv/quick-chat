@@ -4,7 +4,7 @@
 
 - workflow: new-product
 - phase: build
-- plan approval: ApoorvYdv at 2026-10-18T18:47:48.093Z
+- plan approval: Apoorv at 2026-10-18T19:05:58.089Z
 
 ## Tasks
 
@@ -50,15 +50,15 @@
 
 ### T06-understand-route — Rewrite node (entity extraction + per-agent sub-queries, history-aware) and deterministic router with LLM structured-output fallback on no/conflicting route; route source recorded; versioned prompts
 
-- state/risk: active / medium
+- state/risk: done / medium
 - requirements: FR-1, FR-2, NFR-3
-- scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/core/rag/routing.py, src/quick_chat_api/core/llm/prompts, tests/core/rag
+- scope: src/quick_chat_api/core/rag/nodes, src/quick_chat_api/core/rag/routing.py, src/quick_chat_api/core/rag/state.py, src/quick_chat_api/core/llm/prompts, tests/core/rag
 - gates: tests: uv run pytest tests/core/rag -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pass
 - next: Run the task pre-flight.
 
 ### T07-agents — Case, Financial and Procedural agents built on T02-T06 tools; concurrent fan-out, Case-first resolution when another agent needs case ids, case-id scope enforcement, per-agent typed outputs
 
-- state/risk: queued / high
+- state/risk: active / high
 - requirements: FR-3, FR-5, FR-6, FR-7, AC-3, NFR-1
 - scope: src/quick_chat_api/core/rag/agents, tests/core/rag/agents
 - gates: tests: uv run pytest tests/core/rag/agents -q, lint: uv run ruff check src tests evals && uv run mypy src, independent-review: pending

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "project": "quick-chat",
-  "revision": "0e1364fb953b8587367488501feacfa45c42965f",
+  "revision": "e88fcb6c039d2179686952c609a2482c4ee1259c",
   "sourceHash": "58b80bab9aa8a4b40979cbf944b990a2dcfab4e37c521c0279daef4b4982611d",
   "provenance": {
     "tool": "genesis-graphizer",
