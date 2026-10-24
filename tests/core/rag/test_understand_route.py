@@ -6,7 +6,7 @@ from langchain_core.runnables import RunnableLambda
 
 from quick_chat_api.core.rag.nodes import Entities, Understanding, make_understand
 from quick_chat_api.core.rag.nodes.understand import PartyRef, SubQuery
-from quick_chat_api.core.rag.routing import route_by_rules
+from quick_chat_api.core.rag.routing import CASE_NUMBER_RE, route_by_rules
 
 
 class FakeLLM:
@@ -100,3 +100,9 @@ async def test_follow_up_with_history_rewrites_but_rules_still_route() -> None:
     assert llm.calls == 1
     assert out["agents"] == ["financial"] and out["route_source"] == "rule"
     assert out["sub_queries"] == {"financial": "fines on CR-5"}
+
+
+def test_year_first_case_number_anchors_case_and_financial_routes() -> None:
+    q = "Tell me about the case 2026-2172-CR-CR, its case appearances and financial records"
+    assert CASE_NUMBER_RE.findall(q) == ["2026-2172-CR-CR"]
+    assert route_by_rules(q) == ("case", "financial", "procedural")

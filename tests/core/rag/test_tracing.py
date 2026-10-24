@@ -86,3 +86,9 @@ async def test_current_user_stub_populates_context() -> None:
 def test_understand_prompt_formats() -> None:
     messages = UNDERSTAND_V1.format_messages(question="q", history=[])
     assert [m.type for m in messages] == ["system", "human"]
+
+
+def test_log_content_flag_disables_redaction(monkeypatch) -> None:
+    assert tracing._redactor() is tracing._blank
+    monkeypatch.setattr(tracing.settings, "LANGSMITH_LOG_CONTENT", True)
+    assert tracing._redactor() is None

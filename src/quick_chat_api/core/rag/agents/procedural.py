@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from quick_chat_api.core.constants.constants import (
     SOURCE_TYPE_DOMAIN,
@@ -39,8 +39,17 @@ SOURCE_TYPES = [
 ]
 
 
-class CaseIds(BaseModel):
-    case_ids: list[UUID] = Field(min_length=1, max_length=20)
+class CaseRefs(BaseModel):
+    """Case ids when resolved, else exact case numbers; either or both."""
+
+    case_ids: list[UUID] = Field(default_factory=list, max_length=20)
+    case_numbers: list[str] = Field(default_factory=list, max_length=20)
+
+    @model_validator(mode="after")
+    def _non_empty(self) -> CaseRefs:
+        if not self.case_ids and not self.case_numbers:
+            raise ValueError("pass case_ids or case_numbers")
+        return self
 
 
 class FilterAppearances(BaseModel):
@@ -82,21 +91,20 @@ async def run_procedural_agent(
         )
         return "\n".join(map(_line, facts)) or "No appearances found."
 
-    async def appearances(args: CaseIds) -> str:
-        case_ids = scope.require(args.case_ids)
+    async def appearances(args: CaseRefs) -> str:
+        scope.require(args.case_ids)
         async with tenant_session() as session:
-            for case_id in case_ids:
-                out.appearances.extend(
-                    _fact(case_id, a) for a in await get_appearances(session, case_id)
-                )
+            rows = await get_appearances(session, args.case_ids, args.case_numbers)
+        scope.require(a.case_record_id for a in rows)
+        out.appearances.extend(_fact(a.case_record_id, a) for a in rows)
         return keep(out.appearances)
 
-    async def next_appearance(args: CaseIds) -> str:
-        case_ids = scope.require(args.case_ids)
+    async def next_appearance(args: CaseRefs) -> str:
+        scope.require(args.case_ids)
         async with tenant_session() as session:
-            for case_id in case_ids:
-                if (nxt := await get_next_appearance(session, case_id)) is not None:
-                    out.next_appearances.append(_fact(case_id, nxt))
+            rows = await get_next_appearance(session, args.case_ids, args.case_numbers)
+        scope.require(a.case_record_id for a in rows)
+        out.next_appearances.extend(_fact(a.case_record_id, a) for a in rows)
         return keep(out.next_appearances)
 
     async def filter_appearances(args: FilterAppearances) -> str:
@@ -104,15 +112,13 @@ async def run_procedural_agent(
             # Inside a resolved scope the filter applies to those cases only.
             hits: list[AppearanceFact] = []
             async with tenant_session() as session:
-                for case_id in sorted(scope.ids):
-                    hits.extend(
-                        _fact(case_id, a)
-                        for a in await get_appearances(session, case_id)
-                        if (args.status is None or a.status == args.status.value)
-                        and (
-                            args.hearing_date is None or a.due_date == args.hearing_date
-                        )
-                    )
+                rows = await get_appearances(session, sorted(scope.ids))
+                hits.extend(
+                    _fact(a.case_record_id, a)
+                    for a in rows
+                    if (args.status is None or a.status == args.status.value)
+                    and (args.hearing_date is None or a.due_date == args.hearing_date)
+                )
             out.appearances.extend(hits)
             return keep(hits)
         async with tenant_session() as session:
@@ -129,21 +135,21 @@ async def run_procedural_agent(
     tools = [
         build_tool(
             "get_appearances",
-            "All hearings/appearances for resolved case ids, soonest first.",
-            CaseIds,
+            "All hearings/appearances by case ids or exact case numbers, soonest first.",
+            CaseRefs,
             appearances,
             out,
         ),
         build_tool(
             "get_next_appearance",
-            "The next upcoming appearance for resolved case ids.",
-            CaseIds,
+            "The next upcoming appearance per case, by case ids or exact case numbers.",
+            CaseRefs,
             next_appearance,
             out,
         ),
         build_tool(
             "filter_appearances",
-            "Cases with an appearance of a given status and/or hearing date.",
+            "Cases with an appearance of a given status and/or hearing date. Not for a named case: use get_appearances.",
             FilterAppearances,
             filter_appearances,
             out,

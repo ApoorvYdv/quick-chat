@@ -54,5 +54,23 @@ def test_ollama_still_registered() -> None:
 
 
 def test_unknown_provider_lists_registered_names() -> None:
-    with pytest.raises(UnknownChatModelProviderError, match="anthropic, ollama"):
+    with pytest.raises(
+        UnknownChatModelProviderError, match="anthropic, ollama, openrouter"
+    ):
         build_provider("nope", settings, "answer")
+
+
+def test_openrouter_builds_per_role_and_requires_key() -> None:
+    cfg = settings.model_copy(
+        update={
+            "OPENROUTER_API_KEY": SecretStr("k"),
+            "LLM_ANSWER_MODEL": "a:free",
+            "LLM_ROUTER_MODEL": "r:free",
+        }
+    )
+    assert build_provider("openrouter", cfg, "answer").model_name == "a:free"
+    assert build_provider("openrouter", cfg, "router").model_name == "r:free"
+    with pytest.raises(ChatModelProviderError, match="OPENROUTER_API_KEY"):
+        build_provider(
+            "openrouter", cfg.model_copy(update={"OPENROUTER_API_KEY": None}), "answer"
+        )

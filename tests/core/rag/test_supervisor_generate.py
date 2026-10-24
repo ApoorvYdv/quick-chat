@@ -98,6 +98,7 @@ def test_context_prefers_facts_flags_conflicts_and_fits_budget() -> None:
     built = build_context(
         [chunk, _fact("p1", "status=PAID"), _fact("p1", "status=VOID")], 1000
     )
-    assert all(i.evidence.rerank_score is None for i in built.items)
+    scores = [i.evidence.rerank_score for i in built.items]
+    assert scores == [None, None, 5.0]  # facts first, same-record chunk kept
     assert len(built.conflicts) == 1 and "status" in built.conflicts[0]
     assert build_context([_fact("p1", "x" * 400)], 10).items == ()

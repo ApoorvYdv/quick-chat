@@ -1,6 +1,7 @@
 """`@traced_node`: per-node metadata fanned out to tracing sinks.
 
-Sinks only ever receive ids, counts, status and latency; never case content.
+Sinks only ever receive ids, counts, status and latency; never case content,
+unless LANGSMITH_LOG_CONTENT is explicitly enabled (synthetic data only).
 """
 
 from __future__ import annotations
@@ -61,13 +62,18 @@ def langsmith_client() -> Client:
     key = settings.LANGSMITH_API_KEY
     return Client(
         api_key=key.get_secret_value() if key else None,
-        hide_inputs=_blank,
-        hide_outputs=_blank,
+        hide_inputs=_redactor(),
+        hide_outputs=_redactor(),
     )
 
 
 def _blank(_: Any) -> dict[str, Any]:
     return {}
+
+
+def _redactor() -> Callable[[Any], dict[str, Any]] | None:
+    """Blanker by default; None (record content) only when LANGSMITH_LOG_CONTENT is on."""
+    return None if settings.LANGSMITH_LOG_CONTENT else _blank
 
 
 def annotate(**metadata: Any) -> None:
@@ -121,8 +127,8 @@ def span(
         @traceable(
             name=name,
             run_type=run_type,
-            process_inputs=_blank,
-            process_outputs=_blank,
+            process_inputs=_redactor(),
+            process_outputs=_redactor(),
         )
         @wraps(fn)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -153,7 +159,10 @@ def _sinks() -> list[Sink]:
 def traced_node(name: str) -> Callable[[Node], Node]:
     def decorator(fn: Node) -> Node:
         @traceable(
-            name=name, run_type="chain", process_inputs=_blank, process_outputs=_blank
+            name=name,
+            run_type="chain",
+            process_inputs=_redactor(),
+            process_outputs=_redactor(),
         )
         @wraps(fn)
         async def wrapper(state: PipelineState) -> dict[str, Any]:

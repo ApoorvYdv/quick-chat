@@ -111,7 +111,7 @@ async def test_financial_and_procedural_run_concurrently(monkeypatch) -> None:
         await asyncio.wait_for(both_started.wait(), 1)  # fails if run serially
         return {i: PaymentSummary(payments=[], total_paid=Decimal("0")) for i in ids}
 
-    async def appearances(_session, case_id):
+    async def appearances(_session, case_ids, case_numbers=()):
         nonlocal started
         started += 1
         if started == 2:

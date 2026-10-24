@@ -16,7 +16,9 @@ RouteSource = Literal["rule", "llm"]
 
 AGENTS: tuple[Agent, ...] = ("case", "financial", "procedural")
 
-CASE_NUMBER_RE = re.compile(r"\b[A-Z]{1,5}-\d{1,4}(?:-\d+)?\b")
+CASE_NUMBER_RE = re.compile(
+    r"\b(?:[A-Z]{1,5}-\d{1,4}(?:-\d+)?|\d{4}-\d+(?:-[A-Z]{1,5})+)\b"
+)
 
 _KEYWORDS: dict[Agent, re.Pattern[str]] = {
     "case": re.compile(
@@ -25,7 +27,7 @@ _KEYWORDS: dict[Agent, re.Pattern[str]] = {
         re.IGNORECASE,
     ),
     "financial": re.compile(
-        r"\b(fines?|fees?|payments?|paid|balance|owes?|owed|restitution|costs?|"
+        r"\b(financ\w*|fines?|fees?|payments?|paid|balance|owes?|owed|restitution|costs?|"
         r"bond|amount)\b",
         re.IGNORECASE,
     ),

@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 .env
+
+# local Hugging Face model cache (bind-mounted into the app container)
+models/

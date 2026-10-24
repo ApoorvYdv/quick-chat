@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -7,6 +8,8 @@ from starlette_context import plugins
 from starlette_context.middleware import RawContextMiddleware
 
 from quick_chat_api.core.database.connections import get_async_engine
+from quick_chat_api.core.llm.embedding import get_embedding_provider
+from quick_chat_api.core.llm.reranking import get_reranker
 from quick_chat_api.routers.chat_router import router as chat_router
 from quick_chat_api.routers.health_router import router as health_router
 from quick_chat_api.routers.ingestion_router import router as ingestion_router
@@ -17,6 +20,10 @@ INTERNAL_ERROR_DETAIL = "Internal server error."
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # Model load is seconds-to-minutes; pay it at startup, not on the first request.
+    await asyncio.gather(
+        asyncio.to_thread(get_embedding_provider), asyncio.to_thread(get_reranker)
+    )
     yield
     await get_async_engine().dispose()
 

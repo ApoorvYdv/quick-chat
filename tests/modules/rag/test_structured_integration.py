@@ -60,11 +60,13 @@ async def test_structured_queries_are_case_scoped(postgres) -> None:
         assert len(await get_cases_by_number(session, "CR-1")) == 2
         assert await get_cases_by_number(session, "nope") == []
 
-        due = [x.due_date for x in await get_appearances(session, a.id)]
+        due = [x.due_date for x in await get_appearances(session, [a.id])]
         assert due == sorted(due) and len(due) == 3
-        nxt = await get_next_appearance(session, a.id, today=TODAY)
-        assert nxt is not None and nxt.due_date == date(2026, 11, 1)
-        assert await get_next_appearance(session, a.id, today=date(2027, 1, 1)) is None
+        nxt = await get_next_appearance(session, [a.id], today=TODAY)
+        assert [x.due_date for x in nxt] == [date(2026, 11, 1)]
+        by_number = await get_appearances(session, case_numbers=[a.case_number])
+        assert {x.case_record_id for x in by_number} >= {a.id}
+        assert await get_next_appearance(session, [a.id], today=date(2027, 1, 1)) == []
 
         summary = await get_payment_summary(session, a.id)
         assert summary.total_paid == Decimal("10.00") and len(summary.payments) == 2

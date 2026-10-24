@@ -168,9 +168,11 @@ class Settings(BaseSettings):
 
     # LLM (local Ollama by default; 'anthropic' for Claude)
     LLM_PROVIDER: str = Field(
-        default="ollama", description="Chat model provider: 'ollama' | 'anthropic'"
+        default="ollama",
+        description="Chat model provider: 'ollama' | 'anthropic' | 'openrouter'",
     )
     ANTHROPIC_API_KEY: SecretStr | None = Field(default=None)
+    OPENROUTER_API_KEY: SecretStr | None = Field(default=None)
     LLM_MAX_RETRIES: int = Field(
         default=2, description="SDK-level retries per LLM call", ge=0
     )
@@ -196,6 +198,11 @@ class Settings(BaseSettings):
     # LangSmith (redacted metadata-only tracing; off unless enabled per environment)
     LANGSMITH_ENABLED: bool = Field(
         default=False, description="Send redacted per-node traces to LangSmith"
+    )
+    LANGSMITH_LOG_CONTENT: bool = Field(
+        default=False,
+        description="Also send prompts/outputs/case content to LangSmith; "
+        "debugging with synthetic data only",
     )
     LANGSMITH_API_KEY: SecretStr | None = Field(default=None)
     LANGSMITH_PROJECT: str = Field(default="quick-chat")

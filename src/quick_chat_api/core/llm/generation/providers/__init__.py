@@ -2,7 +2,8 @@
 
 from quick_chat_api.core.llm.generation.providers import anthropic as _anthropic
 from quick_chat_api.core.llm.generation.providers import ollama as _ollama
+from quick_chat_api.core.llm.generation.providers import openrouter as _openrouter
 
 __all__: list[str] = []
 
-_ = (_anthropic, _ollama)
+_ = (_anthropic, _ollama, _openrouter)

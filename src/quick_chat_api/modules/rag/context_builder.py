@@ -86,10 +86,10 @@ def _dedupe(evidence: list[EvidenceItem]) -> tuple[list[EvidenceItem], list[str]
         facts = list({e.text: e for e in group if _is_fact(e)}.values())
         if len(facts) > 1:
             conflicts += _conflicts(key, facts)
-        if facts:
-            kept += facts
-            continue
-        kept += list({e.chunk_id: e for e in group}.values())
+        # A fact line is thin (ids, status); the chunk of the same record holds the
+        # narrative (e.g. defendant), so chunks stay and facts just rank first.
+        chunks = {e.chunk_id: e for e in group if not _is_fact(e)}
+        kept += facts + list(chunks.values())
     return kept, conflicts
 
 
